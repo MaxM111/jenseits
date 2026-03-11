@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-import static tuning.setup.Config.*;
+import static jenseits.setup.Config.*;
 
 public class DB {
 

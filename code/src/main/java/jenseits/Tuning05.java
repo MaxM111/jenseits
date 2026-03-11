@@ -2,8 +2,8 @@ package jenseits;
 
 import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
-import tuning.setup.DB;
-import tuning.setup.Database;
+import jenseits.setup.DB;
+import jenseits.setup.Database;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

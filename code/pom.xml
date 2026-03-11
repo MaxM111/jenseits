@@ -3,13 +3,11 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>group6</groupId>
-  <artifactId>Tuning</artifactId>
+  <groupId>group2</groupId>
+  <artifactId>Jenseits</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>Code-Tuning</name>
-  <!-- FIXME change it to the project's website -->
-  <url>https://github.com/sarahgtz/uni_TuningDB</url>
+  <name>Jenseits</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -53,7 +51,7 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <!-- here we specify that we want to use the main method within the DB class -->
-              <mainClass>tuning.Tuning06</mainClass>
+              <mainClass>jenseits.Tuning02</mainClass>
             </manifest>
           </archive>
         </configuration>

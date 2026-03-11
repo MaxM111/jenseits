@@ -2,15 +2,15 @@ package jenseits;
 
 import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
-import tuning.setup.DB;
-import tuning.setup.Database;
+import jenseits.setup.DB;
+import jenseits.setup.Database;
 
 import java.io.*;
 import java.sql.*;
 
-import static tuning.setup.Config.*;
-import static tuning.setup.Database.*;
-import static tuning.setup.Utils.timeIt;
+import static jenseits.setup.Config.*;
+import static jenseits.setup.Database.*;
+import static jenseits.setup.Utils.timeIt;
 
 public class Tuning01 {
     private Connection conn;

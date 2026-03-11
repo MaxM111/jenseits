@@ -8,8 +8,8 @@ import java.sql.Statement;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import tuning.setup.DB;
-import tuning.setup.Database;
+import jenseits.setup.DB;
+import jenseits.setup.Database;
 
 public class Tuning06 {
     private Database db;

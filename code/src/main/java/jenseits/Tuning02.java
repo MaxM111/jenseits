@@ -1,10 +1,9 @@
 package jenseits;
 
-import org.w3c.dom.ls.LSOutput;
-import tuning.setup.DB;
+import jenseits.setup.DB;
 
-import static tuning.setup.Utils.timeIt;
-import tuning.setup.Database;
+import static jenseits.setup.Utils.timeIt;
+import jenseits.setup.Database;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -155,7 +154,6 @@ public class Tuning02 {
         conn.commit();
     }
 
-
     // Slow query with HAVING although it is not needed
     public void query2_1() throws SQLException {
         Statement stmt = conn.createStatement();
@@ -251,7 +249,8 @@ public class Tuning02 {
 
     public Boolean checkEquivalence(String query1, String query2) throws SQLException {
         Statement stmt = conn.createStatement();
-        ResultSet res = stmt.executeQuery("(" + query1 + " EXCEPT ALL " + query2 + ") UNION ALL (" + query2 + " EXCEPT ALL " + query1 + ")");
+        ResultSet res = stmt.executeQuery(
+                "(" + query1 + " EXCEPT ALL " + query2 + ") UNION ALL (" + query2 + " EXCEPT ALL " + query1 + ")");
         return !res.next();
     }
 

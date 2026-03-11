@@ -1,6 +1,6 @@
 package jenseits;
 
-import tuning.setup.*;
+import jenseits.setup.*;
 import java.io.*;
 import java.sql.*;
 
