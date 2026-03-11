@@ -1,4 +1,4 @@
-package tuning.setup;
+package jenseits.setup;
 
 @FunctionalInterface
 public interface ThrowingRunnable {

@@ -1,4 +1,4 @@
-package tuning.setup;
+package jenseits.setup;
 
 public enum Database {
     POSTGRESQL,

@@ -1,4 +1,4 @@
-package tuning.setup;
+package jenseits.setup;
 
 public class Config {
     public static final String DB_NAME = "postgres";

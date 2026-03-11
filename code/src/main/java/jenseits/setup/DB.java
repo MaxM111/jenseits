@@ -1,4 +1,4 @@
-package tuning.setup;
+package jenseits.setup;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

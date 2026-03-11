@@ -1,4 +1,4 @@
-package tuning;
+package jenseits;
 
 import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;

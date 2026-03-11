@@ -1,4 +1,4 @@
-package tuning;
+package jenseits;
 
 import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
@@ -131,26 +131,26 @@ public class Tuning01 {
         results[0] = time;
 
         t.newTable();
-        time = timeIt("straightforward prepared", t::straightPrep,false);
+        time = timeIt("straightforward prepared", t::straightPrep, false);
         logger.write(String.format("straightforward prepared: %fs", time));
         logger.newLine();
         results[1] = time;
 
         t.newTable();
-        time = timeIt("batch basic", t::batch,false);
+        time = timeIt("batch basic", t::batch, false);
         logger.write(String.format("batch basic: %fs", time));
         logger.newLine();
         results[2] = time;
 
         t.newTable();
-        time = timeIt("batch prepared", t::batchPrep,false);
+        time = timeIt("batch prepared", t::batchPrep, false);
         logger.write(String.format("prepared batch: %fs", time));
         logger.newLine();
         results[3] = time;
 
         if (database == POSTGRESQL) {
             t.newTable();
-            time = timeIt("copy", t::copy,false);
+            time = timeIt("copy", t::copy, false);
             logger.write(String.format("copy: %fs", time));
             logger.newLine();
             results[4] = time;

@@ -1,4 +1,4 @@
-package tuning.setup;
+package jenseits.setup;
 
 public class Pair<U, V> {
     private U first;
