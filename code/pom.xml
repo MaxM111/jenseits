@@ -51,7 +51,7 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <!-- here we specify that we want to use the main method within the DB class -->
-              <mainClass>jenseits.Tuning02</mainClass>
+              <mainClass>jenseits.Jenseits01</mainClass>
             </manifest>
           </archive>
         </configuration>
