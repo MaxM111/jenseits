@@ -1,6 +1,7 @@
 package jenseits;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.Statement;
 
 import jenseits.setup.DB;
@@ -10,8 +11,34 @@ public class Jenseits01 {
     public static void main(String[] args) throws Exception {
         var conn = DB.getConnection(Database.POSTGRESQL);
         conn.setAutoCommit(true);
+        infrastructureDemo(conn);
         createTable(conn);
         fillValues(conn);
+    }
+
+    static void infrastructureDemo(Connection conn) throws Exception {
+        var stmt = conn.createStatement();
+        stmt.execute("DROP TABLE IF EXISTS demotable");
+        stmt.execute("CREATE TABLE demotable (name VARCHAR(50), age INTEGER)");
+
+        var valuesSql = "INSERT INTO demotable (name, age) VALUES (?, ?)";
+        var prepStmt = conn.prepareStatement(valuesSql);
+        prepStmt.setString(1, "Sam Crawford");
+        prepStmt.setInt(2, 21);
+        prepStmt.execute();
+        prepStmt.setString(1, "Maximilan Moderegger");
+        prepStmt.setInt(2, 30);
+        prepStmt.execute();
+
+        var querySamAge = """
+                SELECT age
+                FROM demotable
+                WHERE demotable.name = 'Sam Crawford'
+                """; // remember: use single quotes for postgresql
+        ResultSet results = conn.createStatement().executeQuery(querySamAge);
+        if (results.next()) {
+            System.out.println("Age of Sam Crawford: " + results.getInt("age"));
+        }
     }
 
     static void createTable(Connection conn) throws Exception {
