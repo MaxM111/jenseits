@@ -42,7 +42,7 @@ public class Jenseits01 {
                 """; // remember: use single quotes for postgresql
         ResultSet results = conn.createStatement().executeQuery(querySamAge);
         if (results.next()) {
-            System.out.println("Age of Sam Crawford: " + results.getInt("age"));
+            IO.println("Age of Sam Crawford: " + results.getInt("age"));
         }
     }
 
