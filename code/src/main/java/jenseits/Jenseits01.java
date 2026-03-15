@@ -3,6 +3,7 @@ package jenseits;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.Random;
 
 import jenseits.setup.DB;
 import jenseits.setup.Database;
@@ -19,6 +20,8 @@ public class Jenseits01 {
 
         createTableVertical(conn);
         fillValueVerticalManually(conn);
+
+        generate(conn, 10, 0.3, 5);
     }
 
     static void infrastructureDemo(Connection conn) throws Exception {
@@ -112,6 +115,64 @@ public class Jenseits01 {
                 prepStmt.setString(3, a3Column[i].toString());
                 prepStmt.execute();
             }
+        }
+    }
+
+    /*
+     * Create and fill a horizontal table H
+     * Replace the table if it already existed.
+     *
+     * numTuples: number of tuples in H
+     * sparsity: average amount of tuples per attribute whose value is null
+     * numAttributes: number of attributes per tuple
+     *
+     * Further, for every attribute A, there are at most 5 tuples that share the
+     * same value for attribute A.
+     *
+     * TODO:
+     * "Für alle Argumente ist es zulässig nur eine Auswahl an vordefinierten Werten zuzulassen."
+     * - Prof
+     * What does this mean?
+     */
+    static void generate(Connection conn, int numTuples, double sparsity, int numAttributes)
+            throws Exception {
+        assert 0 <= sparsity && sparsity <= 1;
+        assert 0 < numAttributes && numAttributes <= 1600; // Postgresql supports at most 1600
+
+        conn.createStatement().execute("DROP TABLE IF EXISTS generated");
+
+        var rand = new Random();
+        var createSqlBuilder = new StringBuilder().append("CREATE TABLE generated (");
+
+        var attributes = new Attribute[numAttributes];
+        for (int i = 0; i < attributes.length; i++) {
+            var type = rand.nextBoolean() ? AttributeType.String : AttributeType.Integer;
+            attributes[i] = new Attribute("a" + (i + 1), type);
+
+            createSqlBuilder
+                    .append(attributes[i].name)
+                    .append(' ')
+                    .append(attributes[i].type.sqlType());
+            if (i < attributes.length - 1) {
+                createSqlBuilder.append(", ");
+            }
+        }
+        conn.createStatement()
+                .execute(createSqlBuilder.append(')').toString());
+    }
+
+    private record Attribute(String name, AttributeType type) {
+    }
+
+    private enum AttributeType {
+        String,
+        Integer;
+
+        String sqlType() {
+            return switch (this) {
+                case String -> "VARCHAR(50)";
+                case Integer -> "INTEGER";
+            };
         }
     }
 }
