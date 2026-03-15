@@ -7,6 +7,7 @@ import java.util.Random;
 
 import jenseits.setup.DB;
 import jenseits.setup.Database;
+import jenseits.util.*;
 
 public class Jenseits01 {
     public static void main(String[] args) throws Exception {
@@ -21,7 +22,7 @@ public class Jenseits01 {
         createTableVertical(conn);
         fillValueVerticalManually(conn);
 
-        generate(conn, 10, 0.3, 5);
+        generate(conn, 20, 0.3, 10);
     }
 
     static void infrastructureDemo(Connection conn) throws Exception {
@@ -159,6 +160,37 @@ public class Jenseits01 {
         }
         conn.createStatement()
                 .execute(createSqlBuilder.append(')').toString());
+
+        var genericVarchar = new GenericVarchar();
+        var genericInteger = new GenericInteger();
+        var insertSql = "INSERT INTO generated VALUES (" + "?, ".repeat(attributes.length - 1) + "?)";
+        var prepStmt = conn.prepareStatement(insertSql);
+        for (int i = 0; i < numTuples; i++) {
+            for (int j = 0; j < attributes.length; j++) {
+                var attribute = attributes[j];
+                int paramIdx = j + 1; // set<Type> is not 0-indexed
+
+                switch (attribute.type) {
+                    case AttributeType.Integer -> {
+                        if (rand.nextDouble() <= sparsity) {
+                            prepStmt.setNull(paramIdx, java.sql.Types.INTEGER);
+                        } else {
+                            prepStmt.setInt(paramIdx, genericInteger.next());
+                        }
+                    }
+
+                    case AttributeType.String -> {
+                        if (rand.nextDouble() <= sparsity) {
+                            prepStmt.setNull(paramIdx, java.sql.Types.VARCHAR);
+                        } else {
+                            prepStmt.setString(paramIdx, genericVarchar.next());
+                        }
+                    }
+                }
+            }
+
+            prepStmt.execute();
+        }
     }
 
     private record Attribute(String name, AttributeType type) {
