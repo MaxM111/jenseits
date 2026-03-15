@@ -11,9 +11,14 @@ public class Jenseits01 {
     public static void main(String[] args) throws Exception {
         var conn = DB.getConnection(Database.POSTGRESQL);
         conn.setAutoCommit(true);
+
         infrastructureDemo(conn);
+
         createTable(conn);
         fillValues(conn);
+
+        createTableVertical(conn);
+        fillValueVerticalManually(conn);
     }
 
     static void infrastructureDemo(Connection conn) throws Exception {
@@ -46,60 +51,67 @@ public class Jenseits01 {
         stmt.execute("DROP TABLE IF EXISTS H_toy");
         // NOTE: no length for string specified. Example uses single characters, so 10
         // should suffice
-        //TODO: add ID column?
-        stmt.execute("CREATE TABLE H_toy (a1 VARCHAR(10), a2 VARCHAR(10), a3 INTEGER)");
+        stmt.execute("""
+                        CREATE TABLE H_toy (
+                            oid INTEGER PRIMARY KEY,
+                            a1 VARCHAR(10),
+                            a2 VARCHAR(10),
+                            a3 INTEGER
+                )""");
     }
 
     static void fillValues(Connection conn) throws Exception {
-        var prepSql = "INSERT INTO H_toy (a1, a2, a3) VALUES (?, ?, ?)";
+        var prepSql = "INSERT INTO H_toy (oid, a1, a2, a3) VALUES (?, ?, ?, ?)";
         var prepStmt = conn.prepareStatement(prepSql);
 
         var a1Column = new String[] { "a", null, null, null };
         var a2Column = new String[] { "b", "c", null, null };
         var a3Column = new Integer[] { null, 2, 3, null };
         for (int i = 0; i < 4; i++) {
-            prepStmt.setString(1, a1Column[i]);
-            prepStmt.setString(2, a2Column[i]);
+            int oid = i + 1;
+            prepStmt.setInt(1, oid);
+            prepStmt.setString(2, a1Column[i]);
+            prepStmt.setString(3, a2Column[i]);
             if (a3Column[i] == null) {
-                prepStmt.setNull(3, java.sql.Types.INTEGER);
+                prepStmt.setNull(4, java.sql.Types.INTEGER);
             } else {
-                prepStmt.setInt(3, a3Column[i]);
+                prepStmt.setInt(4, a3Column[i]);
             }
             prepStmt.execute();
         }
     }
-    
+
     static void createTableVertical(Connection conn) throws Exception {
         Statement stmt = conn.createStatement();
         stmt.execute("DROP TABLE IF EXISTS V_toy");
-        stmt.execute("CREATE TABLE V_toy (id INTEGER, key VARCHAR(10), val VARCHAR(10))");
+        stmt.execute("CREATE TABLE V_toy (oid INTEGER, key VARCHAR(10), val VARCHAR(10))");
     }
 
     static void fillValueVerticalManually(Connection conn) throws Exception {
-        var prepSql = "INSERT INTO V_toy (id,key, val) VALUES (?, ?, ?)";
+        var prepSql = "INSERT INTO V_toy (oid, key, val) VALUES (?, ?, ?)";
         var prepStmt = conn.prepareStatement(prepSql);
 
         var a1Column = new String[] { "a", null, null, null };
         var a2Column = new String[] { "b", "c", null, null };
         var a3Column = new Integer[] { null, 2, 3, null };
         for (int i = 0; i < 4; i++) {
-          int rowID = i+1;
-          if (a1Column[i] != null) {
-              prepStmt.setInt(1, rowID);
-              prepStmt.setString(2, "a1");
-              prepStmt.setString(3, a2Column[i]);
-          }
-          if (a2Column[i] != null) {
-              prepStmt.setInt(1, rowID);
-              prepStmt.setString(2, "a2");
-              prepStmt.setString(3, a1Column[i]);
-          }
-          if (a3Column[i] != null) {
-              prepStmt.setInt(1, rowID);
-              prepStmt.setString(2, "a3");
-              prepStmt.setString(3, a3Column[i].toString());
-          }
-          prepStmt.execute();
+            int oid = i + 1;
+            if (a1Column[i] != null) {
+                prepStmt.setInt(1, oid);
+                prepStmt.setString(2, "a1");
+                prepStmt.setString(3, a2Column[i]);
+            }
+            if (a2Column[i] != null) {
+                prepStmt.setInt(1, oid);
+                prepStmt.setString(2, "a2");
+                prepStmt.setString(3, a1Column[i]);
+            }
+            if (a3Column[i] != null) {
+                prepStmt.setInt(1, oid);
+                prepStmt.setString(2, "a3");
+                prepStmt.setString(3, a3Column[i].toString());
+            }
+            prepStmt.execute();
         }
     }
 }
