@@ -19,6 +19,8 @@ public class Jenseits01 {
 
         createTableVertical(conn);
         fillValueVerticalManually(conn);
+
+        createViewV2H(conn);
     }
 
     static void infrastructureDemo(Connection conn) throws Exception {
@@ -84,7 +86,7 @@ public class Jenseits01 {
 
     static void createTableVertical(Connection conn) throws Exception {
         Statement stmt = conn.createStatement();
-        stmt.execute("DROP TABLE IF EXISTS V_toy");
+        stmt.execute("DROP TABLE IF EXISTS V_toy CASCADE");
         stmt.execute("CREATE TABLE V_toy (oid INTEGER, key VARCHAR(10), val VARCHAR(10))");
     }
 
@@ -114,4 +116,22 @@ public class Jenseits01 {
             }
         }
     }
+
+    // view V_toy like H_toy
+    static void createViewV2H(Connection conn) throws Exception {
+        Statement stmt = conn.createStatement();
+        stmt.execute("DROP VIEW IF EXISTS h2v_toy");
+        stmt.execute("""
+                CREATE VIEW h2v_toy AS
+                SELECT v.oid as oid,
+                        v1.val as a1,
+                        v2.val as a2,
+                        v3.val as a3
+                FROM ((SELECT DISTINCT oid from v_toy) v
+                LEFT OUTER JOIN v_toy as v1 on (v.oid = v1.oid)
+                LEFT OUTER JOIN v_toy as v2 on (v.oid = v2.oid)
+                LEFT OUTER JOIN v_toy as v3 on (v.oid = v3.oid))
+                """);
+    }
+
 }
