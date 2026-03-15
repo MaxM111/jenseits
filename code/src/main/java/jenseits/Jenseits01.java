@@ -99,12 +99,12 @@ public class Jenseits01 {
             if (a1Column[i] != null) {
                 prepStmt.setInt(1, oid);
                 prepStmt.setString(2, "a1");
-                prepStmt.setString(3, a2Column[i]);
+                prepStmt.setString(3, a1Column[i]);
             }
             if (a2Column[i] != null) {
                 prepStmt.setInt(1, oid);
                 prepStmt.setString(2, "a2");
-                prepStmt.setString(3, a1Column[i]);
+                prepStmt.setString(3, a2Column[i]);
             }
             if (a3Column[i] != null) {
                 prepStmt.setInt(1, oid);
