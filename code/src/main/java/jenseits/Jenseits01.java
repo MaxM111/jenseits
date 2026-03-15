@@ -60,13 +60,14 @@ public class Jenseits01 {
                 )""");
     }
 
+    static final String[] a1Column = new String[] { "a", null, null, null };
+    static final String[] a2Column = new String[] { "b", "c", null, null };
+    static final Integer[] a3Column = new Integer[] { null, 2, 3, null };
+
     static void fillValues(Connection conn) throws Exception {
         var prepSql = "INSERT INTO H_toy (oid, a1, a2, a3) VALUES (?, ?, ?, ?)";
         var prepStmt = conn.prepareStatement(prepSql);
 
-        var a1Column = new String[] { "a", null, null, null };
-        var a2Column = new String[] { "b", "c", null, null };
-        var a3Column = new Integer[] { null, 2, 3, null };
         for (int i = 0; i < 4; i++) {
             int oid = i + 1;
             prepStmt.setInt(1, oid);
@@ -91,9 +92,6 @@ public class Jenseits01 {
         var prepSql = "INSERT INTO V_toy (oid, key, val) VALUES (?, ?, ?)";
         var prepStmt = conn.prepareStatement(prepSql);
 
-        var a1Column = new String[] { "a", null, null, null };
-        var a2Column = new String[] { "b", "c", null, null };
-        var a3Column = new Integer[] { null, 2, 3, null };
         for (int i = 0; i < 4; i++) {
             int oid = i + 1;
             if (a1Column[i] != null) {
