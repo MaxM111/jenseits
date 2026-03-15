@@ -98,18 +98,20 @@ public class Jenseits01 {
                 prepStmt.setInt(1, oid);
                 prepStmt.setString(2, "a1");
                 prepStmt.setString(3, a1Column[i]);
+                prepStmt.execute();
             }
             if (a2Column[i] != null) {
                 prepStmt.setInt(1, oid);
                 prepStmt.setString(2, "a2");
                 prepStmt.setString(3, a2Column[i]);
+                prepStmt.execute();
             }
             if (a3Column[i] != null) {
                 prepStmt.setInt(1, oid);
                 prepStmt.setString(2, "a3");
                 prepStmt.setString(3, a3Column[i].toString());
+                prepStmt.execute();
             }
-            prepStmt.execute();
         }
     }
 }
