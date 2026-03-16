@@ -213,9 +213,10 @@ public class Jenseits01 {
     }
 
     private record Attribute(String name, AttributeType type) {
+    record Attribute(String name, AttributeType type) {
     }
 
-    private enum AttributeType {
+    enum AttributeType {
         String,
         Integer;
 
