@@ -29,6 +29,8 @@ public class Jenseits01 {
         createViewV2H(conn);
 
         generate(conn, 20, 0.3, 10);
+
+        partitionV_toy(conn);
     }
 
     static void infrastructureDemo(Connection conn) throws Exception {
@@ -125,7 +127,9 @@ public class Jenseits01 {
         }
     }
 
-    // view V_toy like H_toy
+    /*
+     * Create view v2h_toy to view V_toy like H_toy
+     */
     static void createViewV2H(Connection conn) throws Exception {
         Statement stmt = conn.createStatement();
         stmt.execute("DROP VIEW IF EXISTS h2v_toy");
@@ -137,12 +141,44 @@ public class Jenseits01 {
                         v3.val as a3
                 FROM
                     (
-                    (SELECT DISTINCT oid from v_toy) v
-                    LEFT OUTER JOIN v_toy as v1 on (v.oid = v1.oid AND v1.key='a1')
-                    LEFT OUTER JOIN v_toy as v2 on (v.oid = v2.oid AND v2.key='a2')
-                    LEFT OUTER JOIN v_toy as v3 on (v.oid = v3.oid AND v3.key='a3')
+                    (SELECT DISTINCT oid from v_toy) AS v
+                    LEFT OUTER JOIN v_toy AS v1 ON (v.oid = v1.oid AND v1.key='a1')
+                    LEFT OUTER JOIN v_toy AS v2 ON (v.oid = v2.oid AND v2.key='a2')
+                    LEFT OUTER JOIN v_toy AS v3 ON (v.oid = v3.oid AND v3.key='a3')
                     )
                 ORDER BY oid;
+                """);
+    }
+
+    /*
+     * Create Tables V_toy_int and V_toy_str
+     * Fill Tables with appropraite values
+     * Create View V_toy_all
+     */
+    static void partitionV_toy(Connection conn) throws Exception {
+        Statement stmt = conn.createStatement();
+
+        stmt.execute("DROP TABLE IF EXISTS V_toy_int CASCADE");
+        stmt.execute("DROP TABLE IF EXISTS V_toy_str CASCADE");
+
+        stmt.execute("CREATE TABLE V_toy_int (oid INTEGER, key VARCHAR(10), val INTEGER)");
+        stmt.execute("CREATE TABLE V_toy_str (oid INTEGER, key VARCHAR(10), val VARCHAR(10))");
+
+        stmt.execute("""
+                INSERT INTO V_toy_int (oid, key, val)
+                SELECT oid, key, val::INTEGER FROM v_toy WHERE val ~ '^[0-9]+$';
+                    """);
+        stmt.execute("""
+                INSERT INTO V_toy_str (oid, key, val)
+                SELECT oid, key, val FROM v_toy WHERE val !~ '^[0-9]+$';
+                    """);
+
+        stmt.execute("""
+                CREATE view v_toy_all AS
+                SELECT oid, key, val::VARCHAR(10) as val FROM v_toy_int
+                UNION
+                SELECT oid,key,val FROM v_toy_str
+                ORDER BY OID;
                 """);
     }
 
