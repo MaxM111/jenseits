@@ -130,15 +130,19 @@ public class Jenseits01 {
         Statement stmt = conn.createStatement();
         stmt.execute("DROP VIEW IF EXISTS h2v_toy");
         stmt.execute("""
-                CREATE VIEW h2v_toy AS
+                CREATE VIEW v2h_toy AS
                 SELECT v.oid as oid,
                         v1.val as a1,
                         v2.val as a2,
                         v3.val as a3
-                FROM ((SELECT DISTINCT oid from v_toy) v
-                LEFT OUTER JOIN v_toy as v1 on (v.oid = v1.oid)
-                LEFT OUTER JOIN v_toy as v2 on (v.oid = v2.oid)
-                LEFT OUTER JOIN v_toy as v3 on (v.oid = v3.oid))
+                FROM
+                    (
+                    (SELECT DISTINCT oid from v_toy) v
+                    LEFT OUTER JOIN v_toy as v1 on (v.oid = v1.oid AND v1.key='a1')
+                    LEFT OUTER JOIN v_toy as v2 on (v.oid = v2.oid AND v2.key='a2')
+                    LEFT OUTER JOIN v_toy as v3 on (v.oid = v3.oid AND v3.key='a3')
+                    )
+                ORDER BY oid;
                 """);
     }
 
