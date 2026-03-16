@@ -149,25 +149,33 @@ public class Jenseits01 {
      * Further, for every attribute A, there are at most 5 tuples that share the
      * same value for attribute A.
      *
-     * TODO:
-     * "Für alle Argumente ist es zulässig nur eine Auswahl an vordefinierten Werten zuzulassen."
-     * - Prof
-     * What does this mean?
      */
     static void generate(Connection conn, int numTuples, double sparsity, int numAttributes)
             throws Exception {
+        assert 0 <= numTuples;
         assert 0 <= sparsity && sparsity <= 1;
         assert 0 < numAttributes && numAttributes <= 1600; // Postgresql supports at most 1600
 
-        conn.createStatement().execute("DROP TABLE IF EXISTS generated");
+        conn.createStatement().execute("DROP TABLE IF EXISTS generated CASCADE");
 
         var rand = new Random();
         var createSqlBuilder = new StringBuilder().append("CREATE TABLE generated (");
 
         var attributes = new Attribute[numAttributes];
         for (int i = 0; i < attributes.length; i++) {
-            var type = rand.nextBoolean() ? AttributeType.String : AttributeType.Integer;
-            attributes[i] = new Attribute("a" + (i + 1), type);
+            if (rand.nextBoolean()) {
+                attributes[i] = new Attribute(
+                        "a" + (i + 1),
+                        AttributeType.String,
+                        null,
+                        new GenericVarchar());
+            } else {
+                attributes[i] = new Attribute(
+                        "a" + (i + 1),
+                        AttributeType.Integer,
+                        new GenericInteger(),
+                        null);
+            }
 
             createSqlBuilder
                     .append(attributes[i].name)
@@ -180,8 +188,6 @@ public class Jenseits01 {
         conn.createStatement()
                 .execute(createSqlBuilder.append(')').toString());
 
-        var genericVarchar = new GenericVarchar();
-        var genericInteger = new GenericInteger();
         var insertSql = "INSERT INTO generated VALUES (" + "?, ".repeat(attributes.length - 1) + "?)";
         var prepStmt = conn.prepareStatement(insertSql);
         for (int i = 0; i < numTuples; i++) {
@@ -194,7 +200,7 @@ public class Jenseits01 {
                         if (rand.nextDouble() <= sparsity) {
                             prepStmt.setNull(paramIdx, java.sql.Types.INTEGER);
                         } else {
-                            prepStmt.setInt(paramIdx, genericInteger.next());
+                            prepStmt.setInt(paramIdx, attribute.intGenerator.next());
                         }
                     }
 
@@ -202,7 +208,7 @@ public class Jenseits01 {
                         if (rand.nextDouble() <= sparsity) {
                             prepStmt.setNull(paramIdx, java.sql.Types.VARCHAR);
                         } else {
-                            prepStmt.setString(paramIdx, genericVarchar.next());
+                            prepStmt.setString(paramIdx, attribute.varcharGenerator.next());
                         }
                     }
                 }
