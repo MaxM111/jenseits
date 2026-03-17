@@ -1,6 +1,7 @@
 package jenseits;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -202,66 +203,85 @@ public class Jenseits01 {
 
         conn.createStatement().execute("DROP TABLE IF EXISTS generated CASCADE");
 
-        var rand = new Random();
-        var createSqlBuilder = new StringBuilder().append("CREATE TABLE generated (");
-
-        var attributes = new Attribute[numAttributes];
-        for (int i = 0; i < attributes.length; i++) {
-            if (rand.nextBoolean()) {
-                attributes[i] = new Attribute(
-                        "a" + (i + 1),
-                        AttributeType.String,
-                        null,
-                        new GenericVarchar());
-            } else {
-                attributes[i] = new Attribute(
-                        "a" + (i + 1),
-                        AttributeType.Integer,
-                        new GenericInteger(),
-                        null);
-            }
-
-            createSqlBuilder
-                    .append(attributes[i].name)
-                    .append(' ')
-                    .append(attributes[i].type.sqlType());
-            if (i < attributes.length - 1) {
-                createSqlBuilder.append(", ");
-            }
-        }
-        conn.createStatement()
-                .execute(createSqlBuilder.append(')').toString());
+        var createSqlBuilder = new StringBuilder()
+                .append("CREATE TABLE generated (");
+        Attribute[] attributes = generateAttributes(numAttributes);
+        String attributesSql = Arrays.stream(attributes)
+                .map(attribute -> attribute.name + ' ' + attribute.type.sqlType())
+                .collect(Collectors.joining(", "));
+        createSqlBuilder
+                .append(attributesSql)
+                .append(')');
+        conn.createStatement().execute(createSqlBuilder.toString());
 
         var insertSql = "INSERT INTO generated VALUES (" + "?, ".repeat(attributes.length - 1) + "?)";
         var prepStmt = conn.prepareStatement(insertSql);
         for (int i = 0; i < numTuples; i++) {
-            for (int j = 0; j < attributes.length; j++) {
-                var attribute = attributes[j];
-                int paramIdx = j + 1; // set<Type> is not 0-indexed
-
-                switch (attribute.type) {
-                    case AttributeType.Integer -> {
-                        if (rand.nextDouble() <= sparsity) {
-                            prepStmt.setNull(paramIdx, java.sql.Types.INTEGER);
-                        } else {
-                            prepStmt.setInt(paramIdx, attribute.intGenerator.next());
-                        }
-                    }
-
-                    case AttributeType.String -> {
-                        if (rand.nextDouble() <= sparsity) {
-                            prepStmt.setNull(paramIdx, java.sql.Types.VARCHAR);
-                        } else {
-                            prepStmt.setString(paramIdx, attribute.varcharGenerator.next());
-                        }
-                    }
-                }
-            }
-
-            prepStmt.execute();
+            setGeneratedRowValues(prepStmt, attributes, sparsity);
         }
 
         showCorrectnessWithViews(conn, attributes);
+    }
+
+    private static void setGeneratedRowValues(PreparedStatement prepStmt, Attribute[] attributes, double sparsity)
+            throws Exception {
+        for (int j = 0; j < attributes.length; j++) {
+            var attribute = attributes[j];
+            int paramIdx = j + 1; // set<Type> is not 0-indexed
+            setAttributeValue(prepStmt, attribute, paramIdx, sparsity);
+        }
+
+        prepStmt.execute();
+    }
+
+    private static void setAttributeValue(PreparedStatement prepStmt, Attribute attribute, int paramIdx,
+            double sparsity) throws Exception {
+        var isNull = new Random().nextDouble() <= sparsity;
+
+        switch (attribute.type) {
+            case AttributeType.Integer -> {
+                if (isNull) {
+                    prepStmt.setNull(paramIdx, java.sql.Types.INTEGER);
+                } else {
+                    prepStmt.setInt(paramIdx, attribute.intGenerator.next());
+                }
+            }
+
+            case AttributeType.String -> {
+                if (isNull) {
+                    prepStmt.setNull(paramIdx, java.sql.Types.VARCHAR);
+                } else {
+                    prepStmt.setString(paramIdx, attribute.varcharGenerator.next());
+                }
+            }
+        }
+    }
+
+    private static Attribute[] generateAttributes(int numAttributes) {
+        var rand = new Random();
+
+        var attributes = new Attribute[numAttributes];
+        for (int i = 0; i < attributes.length; i++) {
+            AttributeType type;
+            IntGenerator intGenerator = null;
+            StringGenerator varcharGenerator = null;
+
+            if (rand.nextBoolean()) {
+                type = AttributeType.String;
+                varcharGenerator = new StringGenerator();
+            } else {
+                type = AttributeType.Integer;
+                intGenerator = new IntGenerator();
+            }
+
+            attributes[i] = new Attribute(
+                    "a" + (i + 1),
+                    type,
+                    intGenerator,
+                    varcharGenerator);
+        }
+
+        return attributes;
     }
 
     static void showCorrectnessWithViews(Connection conn, Attribute[] attributes) throws Exception {
@@ -332,7 +352,7 @@ public class Jenseits01 {
         }
     }
 
-    record Attribute(String name, AttributeType type, GenericInteger intGenerator, GenericVarchar varcharGenerator) {
+    record Attribute(String name, AttributeType type, IntGenerator intGenerator, StringGenerator varcharGenerator) {
     }
 
     enum AttributeType {

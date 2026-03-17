@@ -1,10 +1,10 @@
 package jenseits.util;
 
-public class GenericInteger {
+public class IntGenerator {
     private int current;
     private int count;
 
-    public GenericInteger() {
+    public IntGenerator() {
         current = 1;
         count = 0;
     }

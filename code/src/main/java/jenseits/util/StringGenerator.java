@@ -1,10 +1,10 @@
 package jenseits.util;
 
-public class GenericVarchar {
+public class StringGenerator {
     private String current;
     private int count;
 
-    public GenericVarchar() {
+    public StringGenerator() {
         current = String.valueOf('a');
         count = 0;
     }
