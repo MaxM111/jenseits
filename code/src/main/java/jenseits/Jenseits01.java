@@ -327,6 +327,12 @@ public class Jenseits01 {
                 .append(")");
         views.add(nullAmountBuilder.toString());
 
+        var max5DupsBuilder = new StringBuilder()
+                .append("""
+                        CREATE VIEW over5Dups AS
+                        SELECT *
+                        FROM (
+                            """);
         // cast is needed since some columns are integer, some are varchar
         String over5CountValue = Arrays.stream(attributes)
                 .map(attribute -> String.format("""
@@ -336,12 +342,7 @@ public class Jenseits01 {
                         HAVING COUNT(%1$s) > 5
                         """, attribute.name))
                 .collect(Collectors.joining(" UNION ALL "));
-        var max5DupsBuilder = new StringBuilder()
-                .append("""
-                        CREATE VIEW over5Dups AS
-                        SELECT *
-                        FROM (
-                            """)
+        max5DupsBuilder
                 .append(over5CountValue)
                 .append(")");
         views.add(max5DupsBuilder.toString());
