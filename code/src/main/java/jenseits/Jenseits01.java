@@ -133,7 +133,7 @@ public class Jenseits01 {
      */
     static void createViewV2H(Connection conn) throws Exception {
         Statement stmt = conn.createStatement();
-        stmt.execute("DROP VIEW IF EXISTS h2v_toy");
+        stmt.execute("DROP VIEW IF EXISTS v2h_toy");
         stmt.execute("""
                 CREATE VIEW v2h_toy AS
                 SELECT v.oid as oid,
