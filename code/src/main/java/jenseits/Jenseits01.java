@@ -285,7 +285,7 @@ public class Jenseits01 {
     }
 
     static void showCorrectnessWithViews(Connection conn, Attribute[] attributes) throws Exception {
-        List<String> views = new ArrayList<>(List.of(
+        var views = List.of(
                 "DROP VIEW IF EXISTS num_tuples, attributes, num_attributes, num_values, null_amount CASCADE",
                 """
                         CREATE VIEW num_tuples AS
@@ -307,14 +307,24 @@ public class Jenseits01 {
                         CREATE VIEW num_values AS
                         SELECT num_tuples.count * num_attributes.count AS total
                         FROM num_tuples, num_attributes
-                                """));
+                                """,
+                nullAmountView(attributes),
+                over5DuplicatesView(attributes));
 
+        var stmt = conn.createStatement();
+        for (var view : views) {
+            stmt.execute(view);
+        }
+    }
+
+    private static String nullAmountView(Attribute[] attributes) {
         var nullAmountBuilder = new StringBuilder()
                 .append("""
                         CREATE VIEW null_amount AS
                         SELECT COUNT(*) * 1.0 / MAX(num_values.total) AS relative_null
                         FROM num_values, (
                             """);
+
         String allColumnsNulls = Arrays.stream(attributes)
                 .map(attribute -> String.format("""
                         SELECT *
@@ -322,17 +332,20 @@ public class Jenseits01 {
                         WHERE %s IS NULL
                         """, attribute.name))
                 .collect(Collectors.joining(" UNION ALL ")); // ALL keeps duplicates
-        nullAmountBuilder
-                .append(allColumnsNulls)
-                .append(")");
-        views.add(nullAmountBuilder.toString());
 
-        var max5DupsBuilder = new StringBuilder()
-                .append("""
-                        CREATE VIEW over5Dups AS
-                        SELECT *
-                        FROM (
-                            """);
+        return nullAmountBuilder
+                .append(allColumnsNulls)
+                .append(")")
+                .toString();
+    }
+
+    private static String over5DuplicatesView(Attribute[] attributes) {
+        var max5DupsBuilder = new StringBuilder("""
+                CREATE VIEW over5Dups AS
+                SELECT *
+                FROM (
+                    """);
+
         // cast is needed since some columns are integer, some are varchar
         String over5CountValue = Arrays.stream(attributes)
                 .map(attribute -> String.format("""
@@ -342,15 +355,11 @@ public class Jenseits01 {
                         HAVING COUNT(%1$s) > 5
                         """, attribute.name))
                 .collect(Collectors.joining(" UNION ALL "));
-        max5DupsBuilder
-                .append(over5CountValue)
-                .append(")");
-        views.add(max5DupsBuilder.toString());
 
-        var stmt = conn.createStatement();
-        for (var view : views) {
-            stmt.execute(view);
-        }
+        return max5DupsBuilder
+                .append(over5CountValue)
+                .append(")")
+                .toString();
     }
 
     record Attribute(String name, AttributeType type, IntGenerator intGenerator, StringGenerator varcharGenerator) {
