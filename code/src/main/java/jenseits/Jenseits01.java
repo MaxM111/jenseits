@@ -21,8 +21,8 @@ public class Jenseits01 {
 
         infrastructureDemo(conn);
 
-        createTable(conn);
-        fillValues(conn);
+        createTableHorizontal(conn);
+        fillValuesHorizontal(conn);
 
         createTableVertical(conn);
         fillValueVerticalManually(conn);
@@ -59,7 +59,7 @@ public class Jenseits01 {
         }
     }
 
-    static void createTable(Connection conn) throws Exception {
+    static void createTableHorizontal(Connection conn) throws Exception {
         Statement stmt = conn.createStatement();
         stmt.execute("DROP TABLE IF EXISTS H_toy");
         // NOTE: no length for string specified. Example uses single characters, so 10
@@ -77,7 +77,7 @@ public class Jenseits01 {
     static final String[] a2Column = new String[] { "b", "c", null, null };
     static final Integer[] a3Column = new Integer[] { null, 2, 3, null };
 
-    static void fillValues(Connection conn) throws Exception {
+    static void fillValuesHorizontal(Connection conn) throws Exception {
         var prepSql = "INSERT INTO H_toy (oid, a1, a2, a3) VALUES (?, ?, ?, ?)";
         var prepStmt = conn.prepareStatement(prepSql);
 
