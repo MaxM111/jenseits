@@ -286,7 +286,7 @@ public class Jenseits01 {
 
     static void showCorrectnessWithViews(Connection conn, Attribute[] attributes) throws Exception {
         var views = List.of(
-                "DROP VIEW IF EXISTS num_tuples, attributes, num_attributes, num_values, null_amount CASCADE",
+                "DROP VIEW IF EXISTS num_tuples, attributes, num_attributes, num_values, null_amount, over5Dups CASCADE",
                 """
                         CREATE VIEW num_tuples AS
                         SELECT COUNT(*)
