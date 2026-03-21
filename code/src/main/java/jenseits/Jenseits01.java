@@ -412,7 +412,7 @@ public class Jenseits01 {
         return list;
     }
 
-    private static void createPartitionedVerticalTable(Connection conn, String verticalStrName,
+    private static void createPartitionedVerticalTable(Statement statement, String verticalStrName,
             String verticalIntName) throws Exception {
         String createStringTable = String.format("""
                 CREATE TABLE %s (
@@ -428,8 +428,6 @@ public class Jenseits01 {
                     val INTEGER
                 )
                 """, verticalIntName);
-
-        var statement = conn.createStatement();
         statement.execute(createStringTable);
         statement.execute(createIntTable);
     }
