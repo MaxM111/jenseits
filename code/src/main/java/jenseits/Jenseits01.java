@@ -396,7 +396,7 @@ public class Jenseits01 {
         String verticalStrName = "vertical_str_" + horizontalRelation;
         String verticalIntName = "vertical_int_" + horizontalRelation;
         var statement = conn.createStatement();
-        statement.execute(String.format("DROP TABLE IF EXISTS %s, %s", verticalStrName, verticalIntName));
+        statement.execute(String.format("DROP TABLE IF EXISTS %s, %s CASCADE", verticalStrName, verticalIntName));
 
         List<Attribute> attributes = queryAttributes(conn, horizontalRelation);
 
