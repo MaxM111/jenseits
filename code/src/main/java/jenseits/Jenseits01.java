@@ -405,40 +405,52 @@ public class Jenseits01 {
         String query = String.format("SELECT * FROM %s", horizontalRelation);
         ResultSet rows = conn.createStatement().executeQuery(query);
 
-        PreparedStatement prepStmt = null;
         while (rows.next()) {
-            int oid = rows.getInt("oid");
+            transformRow(conn, rows, attributes, verticalStrName, verticalIntName);
+        }
+    }
 
-            for (var attribute : attributes) {
-                switch (attribute.type) {
-                    case AttributeType.String -> {
-                        prepStmt = conn
-                                .prepareStatement(String.format("INSERT INTO %s VALUES (?, ?, ?)", verticalStrName));
-                        var val = rows.getString(attribute.name);
-                        if (rows.wasNull()) {
-                            continue;
-                        }
-
-                        prepStmt.setInt(1, oid);
-                        prepStmt.setString(2, attribute.name);
-                        prepStmt.setString(3, val);
+    private static void transformRow(Connection conn, ResultSet rows, List<Attribute> attributes,
+            String verticalStrName, String verticalIntName) throws Exception {
+        int oid = rows.getInt("oid");
+        for (var attribute : attributes) {
+            switch (attribute.type) {
+                case AttributeType.String -> {
+                    var val = rows.getString(attribute.name);
+                    if (rows.wasNull()) {
+                        continue;
                     }
-                    case AttributeType.Integer -> {
-                        prepStmt = conn
-                                .prepareStatement(String.format("INSERT INTO %s VALUES (?, ?, ?)", verticalIntName));
-                        int val = rows.getInt(attribute.name);
-                        if (rows.wasNull()) {
-                            continue;
-                        }
-
-                        prepStmt.setInt(1, oid);
-                        prepStmt.setString(2, attribute.name);
-                        prepStmt.setInt(3, val);
-                    }
+                    insertStrAttribute(conn, verticalStrName, oid, attribute.name, val);
                 }
-                prepStmt.execute();
+                case AttributeType.Integer -> {
+                    int val = rows.getInt(attribute.name);
+                    if (rows.wasNull()) {
+                        continue;
+                    }
+                    insertIntAttribute(conn, verticalIntName, oid, attribute.name, val);
+                }
             }
         }
+    }
+
+    private static void insertStrAttribute(Connection conn, String verticalStrName, int oid, String name, String val)
+            throws Exception {
+        PreparedStatement prepStmt = conn
+                .prepareStatement(String.format("INSERT INTO %s VALUES (?, ?, ?)", verticalStrName));
+        prepStmt.setInt(1, oid);
+        prepStmt.setString(2, name);
+        prepStmt.setString(3, val);
+        prepStmt.execute();
+    }
+
+    private static void insertIntAttribute(Connection conn, String verticalIntName, int oid, String name, int val)
+            throws Exception {
+        PreparedStatement prepStmt = conn
+                .prepareStatement(String.format("INSERT INTO %s VALUES (?, ?, ?)", verticalIntName));
+        prepStmt.setInt(1, oid);
+        prepStmt.setString(2, name);
+        prepStmt.setInt(3, val);
+        prepStmt.execute();
     }
 
     private static List<Attribute> queryAttributes(Connection conn, String table) throws Exception {
