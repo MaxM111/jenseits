@@ -34,6 +34,8 @@ public class Jenseits01 {
         partitionV_toy(conn);
     }
 
+    // ----------------------- PHASE 1 -----------------------
+
     static void infrastructureDemo(Connection conn) throws Exception {
         var stmt = conn.createStatement();
         stmt.execute("DROP TABLE IF EXISTS demotable");
@@ -376,4 +378,6 @@ public class Jenseits01 {
             };
         }
     }
+
+    // ----------------------- PHASE 2 -----------------------
 }
