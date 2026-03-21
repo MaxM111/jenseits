@@ -390,18 +390,24 @@ public class Jenseits01 {
                 FROM information_schema.columns
                 WHERE table_name = '%s'
                         """, table);
+
         ResultSet results = conn.createStatement().executeQuery(sql);
         var list = new ArrayList<Attribute>();
         while (results.next()) {
             var name = results.getString("column_name");
+            if (name.equals("oid")) {
+                continue;
+            }
+
             var type = results.getString("data_type").equals("integer") ? AttributeType.Integer : AttributeType.String;
             Attribute attribute = new Attribute(name, type, null, null);
             list.add(attribute);
         }
+
         list.sort((a1, a2) -> {
             Integer a1ColumnNumber = Integer.parseInt(a1.name.substring(1));
             Integer a2ColumnNumber = Integer.parseInt(a2.name.substring(1));
-            return a1ColumnNumber.compareTo(a2ColumnNumber);
+            return a1ColumnNumber.compareTo(a2ColumnNumber); // e.g. compares 10 and 2 for a10 and a2
         });
         return list;
     }
