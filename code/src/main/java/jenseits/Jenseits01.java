@@ -206,7 +206,8 @@ public class Jenseits01 {
         conn.createStatement().execute("DROP TABLE IF EXISTS generated CASCADE");
 
         var createSqlBuilder = new StringBuilder()
-                .append("CREATE TABLE generated (");
+                .append("CREATE TABLE generated (")
+                .append("oid INTEGER, ");
         Attribute[] attributes = generateAttributes(numAttributes);
         String attributesSql = Arrays.stream(attributes)
                 .map(attribute -> attribute.name + ' ' + attribute.type.sqlType())
@@ -216,20 +217,22 @@ public class Jenseits01 {
                 .append(')');
         conn.createStatement().execute(createSqlBuilder.toString());
 
-        var insertSql = "INSERT INTO generated VALUES (" + "?, ".repeat(attributes.length - 1) + "?)";
+        var insertSql = "INSERT INTO generated VALUES (" + "?, ".repeat(attributes.length) + "?)";
         var prepStmt = conn.prepareStatement(insertSql);
         for (int i = 0; i < numTuples; i++) {
-            setGeneratedRowValues(prepStmt, attributes, sparsity);
+            setGeneratedRowValues(prepStmt, i + 1, attributes, sparsity);
         }
 
         showCorrectnessWithViews(conn, attributes);
     }
 
-    private static void setGeneratedRowValues(PreparedStatement prepStmt, Attribute[] attributes, double sparsity)
+    private static void setGeneratedRowValues(PreparedStatement prepStmt, int oid, Attribute[] attributes,
+            double sparsity)
             throws Exception {
+        prepStmt.setInt(1, oid);
         for (int j = 0; j < attributes.length; j++) {
             var attribute = attributes[j];
-            int paramIdx = j + 1; // set<Type> is not 0-indexed
+            int paramIdx = j + 2; // set<Type> is not 0-indexed, first column reserved for oid
             setAttributeValue(prepStmt, attribute, paramIdx, sparsity);
         }
 
