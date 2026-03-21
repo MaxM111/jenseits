@@ -32,6 +32,8 @@ public class Jenseits01 {
         generate(conn, 20, 0.3, 10);
 
         partitionV_toy(conn);
+
+        H2V(conn, "generated");
     }
 
     // ----------------------- PHASE 1 -----------------------
@@ -383,6 +385,61 @@ public class Jenseits01 {
     }
 
     // ----------------------- PHASE 2 -----------------------
+
+    /*
+     * Transforms a relation in horizontal representation into a vertically
+     * represented relation.
+     *
+     * Type safety is preserved by partitioning the table according to the types
+     */
+    static void H2V(Connection conn, String horizontalRelation) throws Exception {
+        String verticalStrName = "vertical_str_" + horizontalRelation;
+        String verticalIntName = "vertical_int_" + horizontalRelation;
+        var statement = conn.createStatement();
+        statement.execute(String.format("DROP TABLE IF EXISTS %s, %s", verticalStrName, verticalIntName));
+
+        List<Attribute> attributes = queryAttributes(conn, horizontalRelation);
+
+        createPartitionedVerticalTable(statement, verticalStrName, verticalIntName);
+
+        String query = String.format("SELECT * FROM %s", horizontalRelation);
+        ResultSet rows = conn.createStatement().executeQuery(query);
+
+        PreparedStatement prepStmt = null;
+        while (rows.next()) {
+            int oid = rows.getInt("oid");
+
+            for (var attribute : attributes) {
+                switch (attribute.type) {
+                    case AttributeType.String -> {
+                        prepStmt = conn
+                                .prepareStatement(String.format("INSERT INTO %s VALUES (?, ?, ?)", verticalStrName));
+                        var val = rows.getString(attribute.name);
+                        if (rows.wasNull()) {
+                            continue;
+                        }
+
+                        prepStmt.setInt(1, oid);
+                        prepStmt.setString(2, attribute.name);
+                        prepStmt.setString(3, val);
+                    }
+                    case AttributeType.Integer -> {
+                        prepStmt = conn
+                                .prepareStatement(String.format("INSERT INTO %s VALUES (?, ?, ?)", verticalIntName));
+                        int val = rows.getInt(attribute.name);
+                        if (rows.wasNull()) {
+                            continue;
+                        }
+
+                        prepStmt.setInt(1, oid);
+                        prepStmt.setString(2, attribute.name);
+                        prepStmt.setInt(3, val);
+                    }
+                }
+                prepStmt.execute();
+            }
+        }
+    }
 
     private static List<Attribute> queryAttributes(Connection conn, String table) throws Exception {
         String sql = String.format("""
