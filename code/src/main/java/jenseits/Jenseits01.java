@@ -509,6 +509,7 @@ public class Jenseits01 {
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_" + horizontalRelation;
         String verticalIntName = "vertical_int_" + horizontalRelation;
+
         var query1 = String.format("""
                 CREATE view vertical_all_%s AS
                 SELECT oid, key, val::VARCHAR(10) as val FROM %s
@@ -517,12 +518,11 @@ public class Jenseits01 {
                 ORDER BY oid;
                 """, horizontalRelation, verticalIntName, verticalStrName);
         stmt.execute(query1);
-        // conn.commit();
 
         var query2 = String.format("SELECT DISTINCT key FROM vertical_all_%s;", horizontalRelation);
         ResultSet results = stmt.executeQuery(query2);
-        List<String> attributes = new ArrayList<>();
 
+        List<String> attributes = new ArrayList<>();
         for (int i = 0; results.next() && i < numMaxAttributes; i++) {
             attributes.add(results.getString("key"));
         }
