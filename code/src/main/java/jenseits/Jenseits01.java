@@ -34,6 +34,7 @@ public class Jenseits01 {
         partitionV_toy(conn);
 
         H2V(conn, "generated");
+        V2H(conn, "generated", 10);
     }
 
     // ----------------------- PHASE 1 -----------------------
@@ -504,7 +505,7 @@ public class Jenseits01 {
     /*
      * Creates a view in database to view vertical tables as horizontal tables.
      */
-    public void V2H(Connection conn, String horizontalRelation, int numAttributes) throws Exception {
+    static void V2H(Connection conn, String horizontalRelation, int numAttributes) throws Exception {
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_" + horizontalRelation;
         String verticalIntName = "vertical_int_" + horizontalRelation;
@@ -527,21 +528,21 @@ public class Jenseits01 {
         }
 
         var sql = new StringBuilder();
-        sql.append("CREATE VIEW vertical_%s AS SELECT v.oid as oid");
+        sql.append(String.format("CREATE VIEW vertical_%s AS SELECT v.oid as oid", horizontalRelation));
         for (int i = 0; i < numAttributes; i++) {
             sql.append(String.format(", v%d.val as %s ", i, attributes.get(i)));
         }
-        sql.append(String.format("FROM ((SELECT DISTINCT oid from %s) AS v", horizontalRelation));
+        sql.append(String.format("FROM ((SELECT DISTINCT oid from vertical_all_%s) AS v", horizontalRelation));
         for (int i = 0; i < numAttributes; i++) {
-            sql.append(String.format(" LEFT OUTER JOIN %s AS v%d ON (%s.oid = v%d.oid AND v%d.key='%s')",
+            sql.append(String.format(
+                    " LEFT OUTER JOIN vertical_all_%s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')",
                     horizontalRelation,
                     i,
-                    horizontalRelation,
                     i,
                     i,
-                    attributes.get(i)));
+                    attributes.get(i).toString()));
         }
         sql.append(") ORDER BY oid;");
-
+        stmt.execute(sql.toString());
     }
 }
