@@ -532,7 +532,7 @@ public class Jenseits01 {
     /*
      * Creates a horizontal view on the given vertical partition of a relation.
      *
-     * @return the name of the view and the number of attributes it has
+     * @return the name of the view and the remaining max. number of attributes
      */
     private static Pair<String, Integer> createHorizontalViewOfPartition(Statement stmt, String verticalStrRelation,
             int numMaxAttributes) throws Exception {
