@@ -30,7 +30,7 @@ public class Jenseits01 {
 
         createViewV2H(conn);
 
-        generate(conn, 10, 0, 10);
+        generate(conn, 10, 0.3, 10);
 
         partitionV_toy(conn);
 
