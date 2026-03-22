@@ -34,7 +34,7 @@ public class Jenseits01 {
         partitionV_toy(conn);
 
         H2V(conn, "generated");
-        V2H(conn, "generated", 10);
+        V2H(conn, "generated", 9);
     }
 
     // ----------------------- PHASE 1 -----------------------
@@ -505,7 +505,7 @@ public class Jenseits01 {
     /*
      * Creates a view in database to view vertical tables as horizontal tables.
      */
-    static void V2H(Connection conn, String horizontalRelation, int numAttributes) throws Exception {
+    static void V2H(Connection conn, String horizontalRelation, int numMaxAttributes) throws Exception {
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_" + horizontalRelation;
         String verticalIntName = "vertical_int_" + horizontalRelation;
@@ -523,17 +523,17 @@ public class Jenseits01 {
         ResultSet results = stmt.executeQuery(query2);
         List<String> attributes = new ArrayList<>();
 
-        for (int i = 0; results.next() && i < numAttributes; i++) {
+        for (int i = 0; results.next() && i < numMaxAttributes; i++) {
             attributes.add(results.getString("key"));
         }
 
         var sql = new StringBuilder();
         sql.append(String.format("CREATE VIEW vertical_%s AS SELECT v.oid as oid", horizontalRelation));
-        for (int i = 0; i < numAttributes; i++) {
+        for (int i = 0; i < numMaxAttributes; i++) {
             sql.append(String.format(", v%d.val as %s ", i, attributes.get(i)));
         }
         sql.append(String.format("FROM ((SELECT DISTINCT oid from vertical_all_%s) AS v", horizontalRelation));
-        for (int i = 0; i < numAttributes; i++) {
+        for (int i = 0; i < numMaxAttributes; i++) {
             sql.append(String.format(
                     " LEFT OUTER JOIN vertical_all_%s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')",
                     horizontalRelation,
