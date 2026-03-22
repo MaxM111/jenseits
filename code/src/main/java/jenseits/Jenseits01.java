@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.sql.DatabaseMetaData;
 
 import jenseits.setup.DB;
 import jenseits.setup.Database;
@@ -181,6 +182,7 @@ public class Jenseits01 {
                 SELECT oid, key, val FROM v_toy WHERE val !~ '^[0-9]+$';
                     """);
 
+        stmt.execute("DROP VIEW IF EXISTS v_toy_all;");
         stmt.execute("""
                 CREATE view v_toy_all AS
                 SELECT oid, key, val::VARCHAR(10) as val FROM vertical_int_v_toy
@@ -511,14 +513,30 @@ public class Jenseits01 {
      * // accessible to the user
      */
     static void V2H(Connection conn, String horizontalRelation, int numMaxAttributes) throws Exception {
+
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_" + horizontalRelation;
         String verticalIntName = "vertical_int_" + horizontalRelation;
 
-        Pair<String, Integer> pair = createHorizontalViewOfPartition(stmt, verticalStrName, numMaxAttributes);
+        DatabaseMetaData meta = conn.getMetaData();
+        ResultSet primaryKeyResults = meta.getPrimaryKeys(null, null, verticalStrName);
+        String primaryKey = null;
+        if (primaryKeyResults.next()) {
+            primaryKey = primaryKeyResults.getString("COLUMN_NAME");
+        }
+        primaryKeyResults.close();
+        if (primaryKey == null) {
+            primaryKey = "oid";
+            // throw new RuntimeException("No primary key found for table " +
+            // verticalStrName);
+        }
+
+        Pair<String, Integer> pair = createHorizontalViewOfPartition(stmt, verticalStrName, numMaxAttributes,
+                primaryKey);
         String strViewName = pair.getFirst();
         int remainingMaxAttributes = pair.getSecond();
-        Pair<String, Integer> pair2 = createHorizontalViewOfPartition(stmt, verticalIntName, remainingMaxAttributes);
+        Pair<String, Integer> pair2 = createHorizontalViewOfPartition(stmt, verticalIntName, remainingMaxAttributes,
+                primaryKey);
         String intViewName = pair2.getFirst();
 
         stmt.execute(String.format("""
@@ -536,7 +554,8 @@ public class Jenseits01 {
      * @return the name of the view and the remaining max. number of attributes
      */
     private static Pair<String, Integer> createHorizontalViewOfPartition(Statement stmt, String verticalStrRelation,
-            int numMaxAttributes) throws Exception {
+            int numMaxAttributes, String prim) throws Exception {
+
         ResultSet allStrAttributes = stmt
                 .executeQuery(String.format("SELECT DISTINCT key FROM %s", verticalStrRelation));
 
@@ -546,21 +565,23 @@ public class Jenseits01 {
         }
 
         var sql = new StringBuilder(String.format(
-                "CREATE VIEW view_%s AS SELECT v.oid AS oid", verticalStrRelation));
+                "CREATE VIEW view_%s AS SELECT v.%s AS %s", verticalStrRelation, prim, prim));
         for (int i = 0; i < attributes.size(); i++) {
             sql.append(String.format(", v%d.val AS %s ", i, attributes.get(i)));
         }
-        sql.append(String.format(" FROM ((SELECT DISTINCT oid FROM %s) AS v", verticalStrRelation));
+        sql.append(String.format(" FROM ((SELECT DISTINCT %s FROM %s) AS v", prim, verticalStrRelation));
         for (int i = 0; i < attributes.size(); i++) {
             sql.append(String.format(
-                    " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')",
+                    " LEFT OUTER JOIN %s AS v%d ON (v.%s = v%d.%s AND v%d.key='%s')",
                     verticalStrRelation,
                     i,
+                    prim,
                     i,
+                    prim,
                     i,
                     attributes.get(i).toString()));
         }
-        sql.append(") ORDER BY oid");
+        sql.append(String.format(") ORDER BY %s", prim));
         stmt.execute(sql.toString());
 
         int remainingMaxAttributes = numMaxAttributes - attributes.size(); // guaranteed >= 0
