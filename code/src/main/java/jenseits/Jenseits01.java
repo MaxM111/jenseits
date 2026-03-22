@@ -500,4 +500,48 @@ public class Jenseits01 {
         statement.execute(createStringTable);
         statement.execute(createIntTable);
     }
+
+    /*
+     * Creates a view in database to view vertical tables as horizontal tables.
+     */
+    public void V2H(Connection conn, String horizontalRelation, int numAttributes) throws Exception {
+        Statement stmt = conn.createStatement();
+        String verticalStrName = "vertical_str_" + horizontalRelation;
+        String verticalIntName = "vertical_int_" + horizontalRelation;
+        var query1 = String.format("""
+                CREATE view vertical_all_%s AS
+                SELECT oid, key, val::VARCHAR(10) as val FROM %s
+                UNION
+                SELECT oid,key,val FROM %s
+                ORDER BY oid;
+                """, horizontalRelation, verticalIntName, verticalStrName);
+        stmt.execute(query1);
+        // conn.commit();
+
+        var query2 = String.format("SELECT DISTINCT key FROM vertical_all_%s;", horizontalRelation);
+        ResultSet results = stmt.executeQuery(query2);
+        List<String> attributes = new ArrayList<>();
+
+        for (int i = 0; results.next() && i < numAttributes; i++) {
+            attributes.add(results.getString("key"));
+        }
+
+        var sql = new StringBuilder();
+        sql.append("CREATE VIEW vertical_%s AS SELECT v.oid as oid");
+        for (int i = 0; i < numAttributes; i++) {
+            sql.append(String.format(", v%d.val as %s ", i, attributes.get(i)));
+        }
+        sql.append(String.format("FROM ((SELECT DISTINCT oid from %s) AS v", horizontalRelation));
+        for (int i = 0; i < numAttributes; i++) {
+            sql.append(String.format(" LEFT OUTER JOIN %s AS v%d ON (%s.oid = v%d.oid AND v%d.key='%s')",
+                    horizontalRelation,
+                    i,
+                    horizontalRelation,
+                    i,
+                    i,
+                    attributes.get(i)));
+        }
+        sql.append(") ORDER BY oid;");
+
+    }
 }
