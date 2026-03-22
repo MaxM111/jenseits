@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import jenseits.setup.DB;
 import jenseits.setup.Database;
+import jenseits.setup.Pair;
 import jenseits.util.*;
 
 public class Jenseits01 {
@@ -504,39 +505,55 @@ public class Jenseits01 {
 
     /*
      * Creates a view in database to view vertical tables as horizontal tables.
+     *
+     * // NOTE: we could inline the two sub-views, if we don't want them to be
+     * // accessible to the user
      */
     static void V2H(Connection conn, String horizontalRelation, int numMaxAttributes) throws Exception {
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_" + horizontalRelation;
         String verticalIntName = "vertical_int_" + horizontalRelation;
 
-        var query1 = String.format("""
-                CREATE view vertical_all_%s AS
-                SELECT oid, key, val::VARCHAR(10) as val FROM %s
-                UNION
-                SELECT oid,key,val FROM %s
-                ORDER BY oid;
-                """, horizontalRelation, verticalIntName, verticalStrName);
-        stmt.execute(query1);
+        Pair<String, Integer> pair = createHorizontalViewOfPartition(stmt, verticalStrName, numMaxAttributes);
+        String strViewName = pair.getFirst();
+        int remainingMaxAttributes = pair.getSecond();
+        Pair<String, Integer> pair2 = createHorizontalViewOfPartition(stmt, verticalIntName, remainingMaxAttributes);
+        String intViewName = pair2.getFirst();
 
-        var query2 = String.format("SELECT DISTINCT key FROM vertical_all_%s;", horizontalRelation);
-        ResultSet results = stmt.executeQuery(query2);
+        stmt.execute(String.format("""
+                CREATE VIEW h_view_vertical_%s AS
+                SELECT *
+                FROM %s AS str
+                FULL OUTER JOIN %s AS int
+                USING (oid)
+                """, horizontalRelation, strViewName, intViewName));
+    }
+
+    /*
+     * Creates a horizontal view on the given vertical partition of a relation.
+     *
+     * @return the name of the view and the number of attributes it has
+     */
+    private static Pair<String, Integer> createHorizontalViewOfPartition(Statement stmt, String verticalStrRelation,
+            int numMaxAttributes) throws Exception {
+        ResultSet allStrAttributes = stmt
+                .executeQuery(String.format("SELECT DISTINCT key FROM %s", verticalStrRelation));
 
         List<String> attributes = new ArrayList<>();
-        for (int i = 0; results.next() && i < numMaxAttributes; i++) {
-            attributes.add(results.getString("key"));
+        for (int i = 0; allStrAttributes.next() && i < numMaxAttributes; i++) {
+            attributes.add(allStrAttributes.getString("key"));
         }
 
-        var sql = new StringBuilder();
-        sql.append(String.format("CREATE VIEW vertical_%s AS SELECT v.oid as oid", horizontalRelation));
-        for (int i = 0; i < numMaxAttributes; i++) {
+        var sql = new StringBuilder(String.format(
+                "CREATE VIEW view_%s AS SELECT v.oid as oid", verticalStrRelation));
+        for (int i = 0; i < attributes.size(); i++) {
             sql.append(String.format(", v%d.val as %s ", i, attributes.get(i)));
         }
-        sql.append(String.format("FROM ((SELECT DISTINCT oid from vertical_all_%s) AS v", horizontalRelation));
-        for (int i = 0; i < numMaxAttributes; i++) {
+        sql.append(String.format("FROM ((SELECT DISTINCT oid from %s) AS v", verticalStrRelation));
+        for (int i = 0; i < attributes.size(); i++) {
             sql.append(String.format(
-                    " LEFT OUTER JOIN vertical_all_%s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')",
-                    horizontalRelation,
+                    " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')",
+                    verticalStrRelation,
                     i,
                     i,
                     i,
@@ -544,5 +561,8 @@ public class Jenseits01 {
         }
         sql.append(") ORDER BY oid;");
         stmt.execute(sql.toString());
+
+        int remainingMaxAttributes = numMaxAttributes - attributes.size(); // guaranteed >= 0
+        return new Pair<>("view_" + verticalStrRelation, remainingMaxAttributes);
     }
 }
