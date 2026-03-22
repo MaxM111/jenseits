@@ -213,7 +213,7 @@ public class Jenseits01 {
         var createSqlBuilder = new StringBuilder()
                 .append("CREATE TABLE generated (")
                 .append("oid INTEGER, ");
-        Attribute[] attributes = generateAttributes(numAttributes - 1); // 1 is already oid
+        Attribute[] attributes = generateAttributes(numAttributes);
         String attributesSql = Arrays.stream(attributes)
                 .map(attribute -> attribute.name + ' ' + attribute.type.sqlType())
                 .collect(Collectors.joining(", "));
