@@ -39,6 +39,8 @@ public class Jenseits01 {
         V2H(conn, "generated", 9);
 
         V2H(conn, "v_toy", 100);
+
+        benchmark(conn);
     }
 
     // ----------------------- PHASE 1 -----------------------
@@ -594,7 +596,7 @@ public class Jenseits01 {
 
         var rand = new Random();
         var stmt = conn.createStatement();
-        int unitInSeconds = 60; // unit in which we count the number of queries
+        int unitInSeconds = 10; // unit in which we count the number of queries
 
         for (var tupleCount : tupleCounts) {
             for (var attributeCount : attributeCounts) {
@@ -611,9 +613,12 @@ public class Jenseits01 {
                     var intValues = tableData.intValues;
                     var varcharValues = tableData.varcharValues;
 
+                    int i = 0;
                     long start = System.currentTimeMillis();
 
                     while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
+                        i++;
+
                         var query1 = String.format("SELECT * FROM %s WHERE oid = %d",
                                 table,
                                 rand.nextInt(1, tupleCount + 1)); // see generate()
@@ -636,6 +641,7 @@ public class Jenseits01 {
                         }
                         stmt.execute(query2);
                     }
+                    IO.println("Result: " + i + " queries in " + unitInSeconds + "s");
                 }
             }
         }
