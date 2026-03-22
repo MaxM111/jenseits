@@ -611,9 +611,9 @@ public class Jenseits01 {
                     var intValues = tableData.intValues;
                     var varcharValues = tableData.varcharValues;
 
-                    long start = System.nanoTime();
+                    long start = System.currentTimeMillis();
 
-                    while (System.nanoTime() - start < unitInSeconds * 1_000_000_000) {
+                    while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
                         var query1 = String.format("SELECT * FROM %s WHERE oid = %d",
                                 table,
                                 rand.nextInt(1, tupleCount + 1)); // see generate()
