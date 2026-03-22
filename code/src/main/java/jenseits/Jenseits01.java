@@ -30,7 +30,7 @@ public class Jenseits01 {
 
         createViewV2H(conn);
 
-        generate(conn, 20, 0.3, 10);
+        generate(conn, 10, 0, 10);
 
         partitionV_toy(conn);
 
@@ -546,11 +546,11 @@ public class Jenseits01 {
         }
 
         var sql = new StringBuilder(String.format(
-                "CREATE VIEW view_%s AS SELECT v.oid as oid", verticalStrRelation));
+                "CREATE VIEW view_%s AS SELECT v.oid AS oid", verticalStrRelation));
         for (int i = 0; i < attributes.size(); i++) {
-            sql.append(String.format(", v%d.val as %s ", i, attributes.get(i)));
+            sql.append(String.format(", v%d.val AS %s ", i, attributes.get(i)));
         }
-        sql.append(String.format("FROM ((SELECT DISTINCT oid from %s) AS v", verticalStrRelation));
+        sql.append(String.format(" FROM ((SELECT DISTINCT oid FROM %s) AS v", verticalStrRelation));
         for (int i = 0; i < attributes.size(); i++) {
             sql.append(String.format(
                     " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')",
@@ -560,7 +560,7 @@ public class Jenseits01 {
                     i,
                     attributes.get(i).toString()));
         }
-        sql.append(") ORDER BY oid;");
+        sql.append(") ORDER BY oid");
         stmt.execute(sql.toString());
 
         int remainingMaxAttributes = numMaxAttributes - attributes.size(); // guaranteed >= 0
