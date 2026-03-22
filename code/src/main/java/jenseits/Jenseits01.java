@@ -36,6 +36,8 @@ public class Jenseits01 {
 
         H2V(conn, "generated");
         V2H(conn, "generated", 9);
+
+        V2H(conn, "v_toy", 100);
     }
 
     // ----------------------- PHASE 1 -----------------------
@@ -165,26 +167,25 @@ public class Jenseits01 {
     static void partitionV_toy(Connection conn) throws Exception {
         Statement stmt = conn.createStatement();
 
-        stmt.execute("DROP TABLE IF EXISTS V_toy_int CASCADE");
-        stmt.execute("DROP TABLE IF EXISTS V_toy_str CASCADE");
+        stmt.execute("DROP TABLE IF EXISTS vertical_int_v_toy, vertical_str_v_toy CASCADE");
 
-        stmt.execute("CREATE TABLE V_toy_int (oid INTEGER, key VARCHAR(10), val INTEGER)");
-        stmt.execute("CREATE TABLE V_toy_str (oid INTEGER, key VARCHAR(10), val VARCHAR(10))");
+        stmt.execute("CREATE TABLE vertical_int_v_toy (oid INTEGER, key VARCHAR(10), val INTEGER)");
+        stmt.execute("CREATE TABLE vertical_str_v_toy (oid INTEGER, key VARCHAR(10), val VARCHAR(10))");
 
         stmt.execute("""
-                INSERT INTO V_toy_int (oid, key, val)
+                INSERT INTO vertical_int_v_toy (oid, key, val)
                 SELECT oid, key, val::INTEGER FROM v_toy WHERE val ~ '^[0-9]+$';
                     """);
         stmt.execute("""
-                INSERT INTO V_toy_str (oid, key, val)
+                INSERT INTO vertical_str_v_toy (oid, key, val)
                 SELECT oid, key, val FROM v_toy WHERE val !~ '^[0-9]+$';
                     """);
 
         stmt.execute("""
                 CREATE view v_toy_all AS
-                SELECT oid, key, val::VARCHAR(10) as val FROM v_toy_int
+                SELECT oid, key, val::VARCHAR(10) as val FROM vertical_int_v_toy
                 UNION
-                SELECT oid,key,val FROM v_toy_str
+                SELECT oid,key,val FROM vertical_str_v_toy
                 ORDER BY OID;
                 """);
     }
