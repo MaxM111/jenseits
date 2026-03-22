@@ -604,6 +604,7 @@ public class Jenseits01 {
                     IO.println("#Attributes: " + attributeCount);
                     IO.println("Sparsity: " + sparsity);
 
+                    stmt.execute("DROP TABLE IF EXISTS generated CASCADE");
                     var tableData = generate(conn, tupleCount, sparsity, attributeCount);
                     String table = "generated"; // as defined in generate()
                     var attributes = tableData.attributes;
