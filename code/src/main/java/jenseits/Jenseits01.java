@@ -620,14 +620,20 @@ public class Jenseits01 {
                         stmt.execute(query1);
 
                         int attributeNum = rand.nextInt(1, attributeCount + 1);
-                        String value = attributes[attributeNum - 1].type == AttributeType.Integer
-                                ? String.valueOf(intValues.get(rand.nextInt(intValues.size())))
-                                : varcharValues.get(rand.nextInt(varcharValues.size()));
-                        var query2 = String.format(
-                                "SELECT oid FROM %s WHERE a%d = %s", "TODO",
-                                table,
-                                attributeNum,
-                                value);
+                        String query2;
+                        if (attributes[attributeNum - 1].type == AttributeType.Integer) {
+                            query2 = String.format(
+                                    "SELECT oid FROM %s WHERE a%d = %s",
+                                    table,
+                                    attributeNum,
+                                    intValues.get(rand.nextInt(intValues.size())));
+                        } else {
+                            query2 = String.format(
+                                    "SELECT oid FROM %s WHERE a%d = '%s'",
+                                    table,
+                                    attributeNum,
+                                    varcharValues.get(rand.nextInt(varcharValues.size())));
+                        }
                         stmt.execute(query2);
                     }
                 }
