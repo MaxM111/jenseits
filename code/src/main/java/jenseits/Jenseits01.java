@@ -611,7 +611,7 @@ public class Jenseits01 {
 
                     long start = System.nanoTime();
 
-                    while (System.nanoTime() - start < unitInSeconds * 1_000_000) {
+                    while (System.nanoTime() - start < unitInSeconds * 1_000_000_000) {
                         var query1 = String.format("SELECT * FROM %s WHERE oid = %d",
                                 table,
                                 rand.nextInt(1, tupleCount + 1)); // see generate()
