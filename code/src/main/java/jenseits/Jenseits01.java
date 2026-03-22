@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import jenseits.setup.DB;
@@ -202,7 +203,7 @@ public class Jenseits01 {
      * same value for attribute A.
      *
      */
-    static void generate(Connection conn, int numTuples, double sparsity, int numAttributes)
+    static TableData generate(Connection conn, int numTuples, double sparsity, int numAttributes)
             throws Exception {
         assert 0 <= numTuples;
         assert 0 <= sparsity && sparsity <= 1;
@@ -224,28 +225,32 @@ public class Jenseits01 {
 
         var insertSql = "INSERT INTO generated VALUES (" + "?, ".repeat(attributes.length) + "?)";
         var prepStmt = conn.prepareStatement(insertSql);
+        List<Integer> intValues = new ArrayList<>();
+        List<String> varcharValues = new ArrayList<>();
         for (int i = 0; i < numTuples; i++) {
-            setGeneratedRowValues(prepStmt, i + 1, attributes, sparsity);
+            setGeneratedRowValues(prepStmt, i + 1, attributes, sparsity, intValues, varcharValues);
         }
 
         showCorrectnessWithViews(conn, attributes);
+
+        return new TableData(attributes, intValues, varcharValues);
     }
 
     private static void setGeneratedRowValues(PreparedStatement prepStmt, int oid, Attribute[] attributes,
-            double sparsity)
+            double sparsity, List<Integer> intValues, List<String> varcharValues)
             throws Exception {
         prepStmt.setInt(1, oid);
         for (int j = 0; j < attributes.length; j++) {
             var attribute = attributes[j];
             int paramIdx = j + 2; // set<Type> is not 0-indexed, first column reserved for oid
-            setAttributeValue(prepStmt, attribute, paramIdx, sparsity);
+            setAttributeValue(prepStmt, attribute, paramIdx, sparsity, intValues, varcharValues);
         }
 
         prepStmt.execute();
     }
 
     private static void setAttributeValue(PreparedStatement prepStmt, Attribute attribute, int paramIdx,
-            double sparsity) throws Exception {
+            double sparsity, List<Integer> intValues, List<String> varcharValues) throws Exception {
         var isNull = new Random().nextDouble() <= sparsity;
 
         switch (attribute.type) {
@@ -253,7 +258,9 @@ public class Jenseits01 {
                 if (isNull) {
                     prepStmt.setNull(paramIdx, java.sql.Types.INTEGER);
                 } else {
-                    prepStmt.setInt(paramIdx, attribute.intGenerator.next());
+                    int val = attribute.intGenerator.next();
+                    prepStmt.setInt(paramIdx, val);
+                    intValues.add(val);
                 }
             }
 
@@ -261,7 +268,9 @@ public class Jenseits01 {
                 if (isNull) {
                     prepStmt.setNull(paramIdx, java.sql.Types.VARCHAR);
                 } else {
-                    prepStmt.setString(paramIdx, attribute.varcharGenerator.next());
+                    var val = attribute.varcharGenerator.next();
+                    prepStmt.setString(paramIdx, val);
+                    varcharValues.add(val);
                 }
             }
         }
@@ -565,5 +574,65 @@ public class Jenseits01 {
 
         int remainingMaxAttributes = numMaxAttributes - attributes.size(); // guaranteed >= 0
         return new Pair<>("view_" + verticalStrRelation, remainingMaxAttributes);
+    }
+
+    // Benchmarking
+
+    /*
+     * |H| := #tuples
+     * |A| := #attributes
+     * S := sparsity (\in [0, 1))
+     *
+     * Measures how horizontal and vertical representations compare in terms of
+     * queries in a minute.
+     */
+    static void benchmark(Connection conn) throws Exception {
+        int[] tupleCounts = new int[] { 2000, 4000, 8000, 16000 };
+        int[] attributeCounts = new int[] { 5, 10, 15, 20 };
+        double[] sparsityValues = new double[] { 1 - 1 / 2, 1 - 1 / 4, 1 - 1 / 8, 1 - 1 / 16 };
+
+        var rand = new Random();
+        var stmt = conn.createStatement();
+        int unitInSeconds = 60; // unit in which we count the number of queries
+
+        for (var tupleCount : tupleCounts) {
+            for (var attributeCount : attributeCounts) {
+                for (var sparsity : sparsityValues) {
+                    IO.println("----------------------");
+                    IO.println("#Tuples: " + tupleCount);
+                    IO.println("#Attributes: " + attributeCount);
+                    IO.println("Sparsity: " + sparsity);
+
+                    var tableData = generate(conn, tupleCount, sparsity, attributeCount);
+                    String table = "generated"; // as defined in generate()
+                    var attributes = tableData.attributes;
+                    var intValues = tableData.intValues;
+                    var varcharValues = tableData.varcharValues;
+
+                    long start = System.nanoTime();
+
+                    while (System.nanoTime() - start < unitInSeconds * 1_000_000) {
+                        var query1 = String.format("SELECT * FROM %s WHERE oid = %d",
+                                table,
+                                rand.nextInt(1, tupleCount + 1)); // see generate()
+                        stmt.execute(query1);
+
+                        int attributeNum = rand.nextInt(1, attributeCount + 1);
+                        String value = attributes[attributeNum - 1].type == AttributeType.Integer
+                                ? String.valueOf(intValues.get(rand.nextInt(intValues.size())))
+                                : varcharValues.get(rand.nextInt(varcharValues.size()));
+                        var query2 = String.format(
+                                "SELECT oid FROM %s WHERE a%d = %s", "TODO",
+                                table,
+                                attributeNum,
+                                value);
+                        stmt.execute(query2);
+                    }
+                }
+            }
+        }
+    }
+
+    record TableData(Attribute[] attributes, List<Integer> intValues, List<String> varcharValues) {
     }
 }
