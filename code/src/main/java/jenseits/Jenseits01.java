@@ -236,6 +236,11 @@ public class Jenseits01 {
 
         showCorrectnessWithViews(conn, attributes);
 
+        // in the rare event that all values are null, generate again
+        if (intValues.isEmpty() || varcharValues.isEmpty()) {
+            return generate(conn, numTuples, sparsity, numAttributes);
+        }
+
         return new TableData(attributes, intValues, varcharValues);
     }
 
