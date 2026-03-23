@@ -638,7 +638,7 @@ public class Jenseits01 {
                     long start = System.currentTimeMillis();
 
                     while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
-                        i++;
+                        i += 2;
 
                         var query1 = String.format("SELECT * FROM %s WHERE oid = %d",
                                 table,
