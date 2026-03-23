@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.sql.DatabaseMetaData;
 
@@ -394,7 +393,7 @@ public class Jenseits01 {
 
         String sqlType() {
             return switch (this) {
-                case String -> "VARCHAR(50)";
+                case String -> "VARCHAR(100)";
                 case Integer -> "INTEGER";
             };
         }
@@ -503,7 +502,7 @@ public class Jenseits01 {
                 CREATE TABLE %s (
                     oid INTEGER,
                     key VARCHAR(10),
-                    val VARCHAR(10)
+                    val VARCHAR(100)
                 )
                         """, verticalStrName);
         String createIntTable = String.format("""
@@ -626,46 +625,98 @@ public class Jenseits01 {
                     IO.println("#Tuples: " + tupleCount);
                     IO.println("#Attributes: " + attributeCount);
                     IO.println("Sparsity: " + sparsity);
-
-                    stmt.execute("DROP TABLE IF EXISTS generated CASCADE");
-                    var tableData = generate(conn, tupleCount, sparsity, attributeCount);
-                    String table = "generated"; // as defined in generate()
-                    var attributes = tableData.attributes;
-                    var intValues = tableData.intValues;
-                    var varcharValues = tableData.varcharValues;
-
-                    int i = 0;
-                    long start = System.currentTimeMillis();
-
-                    while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
-                        i += 2;
-
-                        var query1 = String.format("SELECT * FROM %s WHERE oid = %d",
-                                table,
-                                rand.nextInt(1, tupleCount + 1)); // see generate()
-                        stmt.execute(query1);
-
-                        int attributeNum = rand.nextInt(1, attributeCount + 1);
-                        String query2;
-                        if (attributes[attributeNum - 1].type == AttributeType.Integer) {
-                            query2 = String.format(
-                                    "SELECT oid FROM %s WHERE a%d = %s",
-                                    table,
-                                    attributeNum,
-                                    intValues.get(rand.nextInt(intValues.size())));
-                        } else {
-                            query2 = String.format(
-                                    "SELECT oid FROM %s WHERE a%d = '%s'",
-                                    table,
-                                    attributeNum,
-                                    varcharValues.get(rand.nextInt(varcharValues.size())));
-                        }
-                        stmt.execute(query2);
-                    }
-                    IO.println("Result: " + i + " queries in " + unitInSeconds + "s");
+                    IO.println("----------------------");
+                    IO.println("Horizontal: ");
+                    horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds);
+                    IO.println("Vertical: ");
+                    verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds);
                 }
             }
         }
+    }
+
+    private static void horizontalBenchmark(Connection conn, Statement stmt, int tupleCount, double sparsity,
+            int attributeCount, int unitInSeconds) throws Exception {
+        Random rand = new Random();
+        stmt.execute("DROP TABLE IF EXISTS generated CASCADE");
+        var tableData = generate(conn, tupleCount, sparsity, attributeCount);
+        String table = "generated"; // as defined in generate()
+        var attributes = tableData.attributes;
+        var intValues = tableData.intValues;
+        var varcharValues = tableData.varcharValues;
+
+        int i = 0;
+        long start = System.currentTimeMillis();
+
+        while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
+            i += 2;
+
+            var query1 = String.format("SELECT * FROM %s WHERE oid = %d",
+                    table,
+                    rand.nextInt(1, tupleCount + 1)); // see generate()
+            stmt.execute(query1);
+
+            int attributeNum = rand.nextInt(1, attributeCount + 1);
+            String query2;
+            if (attributes[attributeNum - 1].type == AttributeType.Integer) {
+                query2 = String.format(
+                        "SELECT oid FROM %s WHERE a%d = %s",
+                        table,
+                        attributeNum,
+                        intValues.get(rand.nextInt(intValues.size())));
+            } else {
+                query2 = String.format(
+                        "SELECT oid FROM %s WHERE a%d = '%s'",
+                        table,
+                        attributeNum,
+                        varcharValues.get(rand.nextInt(varcharValues.size())));
+            }
+            stmt.execute(query2);
+        }
+        IO.println("Result: " + i + " queries in " + unitInSeconds + "s");
+    }
+
+    private static void verticalBenchmark(Connection conn, Statement stmt, int tupleCount, double sparsity,
+            int attributeCount, int unitInSeconds) throws Exception {
+        Random rand = new Random();
+        stmt.execute("DROP TABLE IF EXISTS generated CASCADE");
+        var tableData = generate(conn, tupleCount, sparsity, attributeCount);
+        H2V(conn, "generated"); // transform into vertical representation
+        V2H(conn, "generated", 20); // create view to access using a horizontal view
+        String table = "h_view_vertical_generated"; // as defined in V2H()
+        var attributes = tableData.attributes;
+        var intValues = tableData.intValues;
+        var varcharValues = tableData.varcharValues;
+
+        int i = 0;
+        long start = System.currentTimeMillis();
+
+        while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
+            i += 2;
+
+            var query1 = String.format("SELECT * FROM %s WHERE oid = %d",
+                    table,
+                    rand.nextInt(1, tupleCount + 1)); // see generate()
+            stmt.execute(query1);
+
+            int attributeNum = rand.nextInt(1, attributeCount + 1);
+            String query2;
+            if (attributes[attributeNum - 1].type == AttributeType.Integer) {
+                query2 = String.format(
+                        "SELECT oid FROM %s WHERE a%d = %s",
+                        table,
+                        attributeNum,
+                        intValues.get(rand.nextInt(intValues.size())));
+            } else {
+                query2 = String.format(
+                        "SELECT oid FROM %s WHERE a%d = '%s'",
+                        table,
+                        attributeNum,
+                        varcharValues.get(rand.nextInt(varcharValues.size())));
+            }
+            stmt.execute(query2);
+        }
+        IO.println("Result: " + i + " queries in " + unitInSeconds + "s");
     }
 
     record TableData(Attribute[] attributes, List<Integer> intValues, List<String> varcharValues) {
