@@ -664,16 +664,21 @@ public class Jenseits01 {
         var intValues = tableData.intValues;
         var varcharValues = tableData.varcharValues;
 
-        int i = 0;
+        int queryCount1 = 0;
         long start = System.currentTimeMillis();
-
         while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
-            i += 2;
+            queryCount1++;
 
             var query1 = String.format("SELECT * FROM %s WHERE oid = %d",
                     table,
                     rand.nextInt(1, tupleCount + 1)); // see generate()
             stmt.execute(query1);
+        }
+
+        int queryCount2 = 0;
+        start = System.currentTimeMillis();
+        while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
+            queryCount2++;
 
             int attributeNum = rand.nextInt(1, attributeCount + 1);
             String query2;
@@ -692,7 +697,7 @@ public class Jenseits01 {
             }
             stmt.execute(query2);
         }
-        IO.println("    Result: " + i + " queries in " + unitInSeconds + "s");
+        IO.println("    Result: " + queryCount1 + " query1, " + queryCount2 + " query2 in " + unitInSeconds + "s");
     }
 
     record TableData(Attribute[] attributes, List<Integer> intValues, List<String> varcharValues) {
