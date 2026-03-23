@@ -614,7 +614,6 @@ public class Jenseits01 {
         double[] sparsityValues = new double[] { 1.0 - 1.0 / 2.0, 1.0 - 1.0 / 4.0, 1.0 - (1.0 / 8.0),
                 1.0 - (1.0 / 16.0) };
 
-        var rand = new Random();
         var stmt = conn.createStatement();
         int unitInSeconds = 10; // unit in which we count the number of queries
 
@@ -626,9 +625,9 @@ public class Jenseits01 {
                     IO.println("#Attributes: " + attributeCount);
                     IO.println("Sparsity: " + sparsity);
                     IO.println("----------------------");
-                    IO.println("Horizontal: ");
+                    IO.println("  Horizontal: ");
                     horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds);
-                    IO.println("Vertical: ");
+                    IO.println("  Vertical: ");
                     verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds);
                 }
             }
@@ -637,53 +636,25 @@ public class Jenseits01 {
 
     private static void horizontalBenchmark(Connection conn, Statement stmt, int tupleCount, double sparsity,
             int attributeCount, int unitInSeconds) throws Exception {
-        Random rand = new Random();
         stmt.execute("DROP TABLE IF EXISTS generated CASCADE");
         var tableData = generate(conn, tupleCount, sparsity, attributeCount);
         String table = "generated"; // as defined in generate()
-        var attributes = tableData.attributes;
-        var intValues = tableData.intValues;
-        var varcharValues = tableData.varcharValues;
-
-        int i = 0;
-        long start = System.currentTimeMillis();
-
-        while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
-            i += 2;
-
-            var query1 = String.format("SELECT * FROM %s WHERE oid = %d",
-                    table,
-                    rand.nextInt(1, tupleCount + 1)); // see generate()
-            stmt.execute(query1);
-
-            int attributeNum = rand.nextInt(1, attributeCount + 1);
-            String query2;
-            if (attributes[attributeNum - 1].type == AttributeType.Integer) {
-                query2 = String.format(
-                        "SELECT oid FROM %s WHERE a%d = %s",
-                        table,
-                        attributeNum,
-                        intValues.get(rand.nextInt(intValues.size())));
-            } else {
-                query2 = String.format(
-                        "SELECT oid FROM %s WHERE a%d = '%s'",
-                        table,
-                        attributeNum,
-                        varcharValues.get(rand.nextInt(varcharValues.size())));
-            }
-            stmt.execute(query2);
-        }
-        IO.println("Result: " + i + " queries in " + unitInSeconds + "s");
+        benchmarkTable(stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount);
     }
 
     private static void verticalBenchmark(Connection conn, Statement stmt, int tupleCount, double sparsity,
             int attributeCount, int unitInSeconds) throws Exception {
-        Random rand = new Random();
         stmt.execute("DROP TABLE IF EXISTS generated CASCADE");
         var tableData = generate(conn, tupleCount, sparsity, attributeCount);
         H2V(conn, "generated"); // transform into vertical representation
         V2H(conn, "generated", 20); // create view to access using a horizontal view
         String table = "h_view_vertical_generated"; // as defined in V2H()
+        benchmarkTable(stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount);
+    }
+
+    private static void benchmarkTable(Statement stmt, String table, TableData tableData, int unitInSeconds,
+            int tupleCount, double sparsity, int attributeCount) throws Exception {
+        var rand = new Random();
         var attributes = tableData.attributes;
         var intValues = tableData.intValues;
         var varcharValues = tableData.varcharValues;
@@ -716,7 +687,7 @@ public class Jenseits01 {
             }
             stmt.execute(query2);
         }
-        IO.println("Result: " + i + " queries in " + unitInSeconds + "s");
+        IO.println("    Result: " + i + " queries in " + unitInSeconds + "s");
     }
 
     record TableData(Attribute[] attributes, List<Integer> intValues, List<String> varcharValues) {
