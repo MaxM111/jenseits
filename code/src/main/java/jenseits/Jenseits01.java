@@ -614,9 +614,9 @@ public class Jenseits01 {
      * queries in a minute.
      */
     static void benchmark(Connection conn) throws Exception {
-        int[] tupleCounts = new int[] { 2000, 4000, 8000, 16000 };
-        int[] attributeCounts = new int[] { 5, 10, 15, 20 };
-        double[] sparsityValues = new double[] { 1.0 - 1.0 / 2.0, 1.0 - 1.0 / 4.0, 1.0 - (1.0 / 8.0),
+        int[] tupleCounts = new int[] { 2000, 4000, 8000 };
+        int[] attributeCounts = new int[] { 5, 10, 15 };
+        double[] sparsityValues = new double[] { 1.0 - 1.0 / 2.0, 1.0 - 1.0 / 4.0,
                 1.0 - (1.0 / 16.0) };
 
         var stmt = conn.createStatement();
