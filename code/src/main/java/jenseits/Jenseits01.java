@@ -644,6 +644,10 @@ public class Jenseits01 {
         stmt.execute("DROP TABLE IF EXISTS generated CASCADE");
         var tableData = generate(conn, tupleCount, sparsity, attributeCount);
         String table = "generated"; // as defined in generate()
+
+        long tableSize = tableSize(conn, table);
+        IO.println("    Size: " + tableSize + " Bytes");
+
         benchmarkTable(stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount);
     }
 
@@ -654,6 +658,10 @@ public class Jenseits01 {
         H2V(conn, "generated"); // transform into vertical representation
         V2H(conn, "generated", 20); // create view to access using a horizontal view
         String table = "h_view_vertical_generated"; // as defined in V2H()
+
+        long tableSize = tableSize(conn, "vertical_str_generated") + tableSize(conn, "vertical_int_generated");
+        IO.println("    Size: " + tableSize + " Bytes");
+
         benchmarkTable(stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount);
     }
 
@@ -698,6 +706,16 @@ public class Jenseits01 {
             stmt.execute(query2);
         }
         IO.println("    Result: " + queryCount1 + " query1, " + queryCount2 + " query2 in " + unitInSeconds + "s");
+    }
+
+    /*
+     * @return size of the table in bytes
+     */
+    private static long tableSize(Connection conn, String table) throws Exception {
+        ResultSet result = conn.createStatement()
+                .executeQuery(
+                        String.format("SELECT pg_total_relation_size('\"%s\"') AS size", table));
+        return result.next() ? result.getInt(1) : -1;
     }
 
     record TableData(Attribute[] attributes, List<Integer> intValues, List<String> varcharValues) {
