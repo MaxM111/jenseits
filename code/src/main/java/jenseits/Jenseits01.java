@@ -52,10 +52,10 @@ public class Jenseits01 {
 
         var valuesSql = "INSERT INTO demotable (name, age) VALUES (?, ?)";
         var prepStmt = conn.prepareStatement(valuesSql);
-        prepStmt.setString(1, "S C");
+        prepStmt.setString(1, "Sam Crawford");
         prepStmt.setInt(2, 21);
         prepStmt.execute();
-        prepStmt.setString(1, "M M");
+        prepStmt.setString(1, "Max Moderegger");
         prepStmt.setInt(2, 32);
         prepStmt.execute();
 
@@ -631,11 +631,9 @@ public class Jenseits01 {
                     IO.println("Sparsity: " + sparsity);
                     IO.println("----------------------");
                     IO.println("  Horizontal: ");
-                    horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
-                    // unitInSeconds);
+                    horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds);
                     IO.println("  Vertical: ");
-                    verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
-                    // unitInSeconds);
+                    verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds);
                     IO.println("  Vertical Optimized: ");
                     verticalBenchmarkOpt(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds);
                 }
@@ -654,7 +652,7 @@ public class Jenseits01 {
 
         // benchmarkTable(stmt, table, tableData, unitInSeconds, tupleCount, sparsity,
         // attributeCount);
-        benchmarkTableOpt(conn, stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount);
+        benchmarkTable(stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount);
     }
 
     private static void verticalBenchmark(Connection conn, Statement stmt, int tupleCount, double sparsity,
@@ -731,7 +729,8 @@ public class Jenseits01 {
      * Creates an specialized view view in database to view vertical tables as
      * horizontal tables for optimized bnechmarks.
      */
-    static void V2Hspec(Connection conn, String horizontalRelation, int numMaxAttributes) throws Exception {
+    static void V2Hspec(Connection conn, String horizontalRelation, int numMaxAttributes)
+            throws Exception {
 
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_" + horizontalRelation;
@@ -758,6 +757,8 @@ public class Jenseits01 {
                 primaryKey);
         String intViewName = pair2.getFirst();
 
+        List<Attribute> columns = queryAttributes(conn, horizontalRelation);
+
         stmt.execute(String.format("""
                 CREATE VIEW h_view_vertical_spec_%s AS
                 SELECT *
@@ -765,6 +766,13 @@ public class Jenseits01 {
                 FULL OUTER JOIN %s AS int
                 USING (oid)
                 """, horizontalRelation, strViewName, intViewName));
+        for (var column : columns) {
+            stmt.execute(String.format("""
+                    CREATE VIEW h_view_vertical_spec_%s_%s AS
+                    SELECT oid,%s
+                    FROM h_view_vertical_spec_%s;
+                    """, horizontalRelation, column.name, column.name, horizontalRelation));
+        }
     }
 
     /*
@@ -788,9 +796,8 @@ public class Jenseits01 {
 
     private static void createIndex(Connection conn, String table) throws Exception {
         Statement stmt = conn.createStatement();
-
         stmt.execute(String.format("DROP INDEX IF EXISTS %s_oid_key_val;", table));
-        stmt.execute(String.format("CREATE INDEX %s_oid_key_val ON %s (oid,key,val);", table, table));
+        stmt.execute(String.format("CREATE INDEX %s_oid_key ON %s (oid,key);", table, table));
     }
 
     /*
@@ -824,14 +831,14 @@ public class Jenseits01 {
             String query2;
             if (attributes[attributeNum - 1].type == AttributeType.Integer) {
                 query2 = String.format(
-                        "SELECT oid FROM %s WHERE a%d = %s",
-                        table,
+                        "SELECT oid FROM %s",
+                        table + "_a" + attributeNum,
                         attributeNum,
                         intValues.get(rand.nextInt(intValues.size())));
             } else {
                 query2 = String.format(
-                        "SELECT oid FROM %s WHERE a%d = '%s'",
-                        table,
+                        "SELECT oid FROM %s",
+                        table + "_a" + attributeNum,
                         attributeNum,
                         varcharValues.get(rand.nextInt(varcharValues.size())));
             }
