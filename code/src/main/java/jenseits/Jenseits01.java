@@ -813,13 +813,13 @@ public class Jenseits01 {
 
         int queryCount1 = 0;
         long start = System.currentTimeMillis();
+        var query1 = String.format("SELECT * FROM %s WHERE oid = ?",
+                table); // see generate()
+        PreparedStatement prepStmt1 = conn.prepareStatement(query1);
         while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
             queryCount1++;
-
-            var query1 = String.format("SELECT * FROM %s WHERE oid = %d",
-                    table,
-                    rand.nextInt(1, tupleCount + 1)); // see generate()
-            stmt.execute(query1);
+            prepStmt1.setInt(1, rand.nextInt(1, tupleCount + 1));
+            prepStmt1.execute();
         }
 
         int queryCount2 = 0;
