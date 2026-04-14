@@ -1,0 +1,379 @@
+Age of Sam Crawford: 21
+----------------------
+#Tuples: 2000
+#Attributes: 5
+Sparsity: 0.5
+----------------------
+  Horizontal: 
+    Size: 122880 Bytes
+    Result: 54382 query1, 57551 query2 in 10s
+  Vertical: 
+    Size: 278528 Bytes
+    Result: 9551 query1, 3095 query2 in 10s
+  Vertical Optimized: 
+    Size: 434176 Bytes
+    Result: 133051 query1, 40811 query2 in 10s
+----------------------
+#Tuples: 2000
+#Attributes: 5
+Sparsity: 0.75
+----------------------
+  Horizontal: 
+    Size: 106496 Bytes
+    Result: 61826 query1, 58548 query2 in 10s
+  Vertical: 
+    Size: 172032 Bytes
+    Result: 21899 query1, 7158 query2 in 10s
+  Vertical Optimized: 
+    Size: 270336 Bytes
+    Result: 137327 query1, 43806 query2 in 10s
+----------------------
+#Tuples: 2000
+#Attributes: 5
+Sparsity: 0.9375
+----------------------
+  Horizontal: 
+    Size: 98304 Bytes
+    Result: 64375 query1, 63721 query2 in 10s
+  Vertical: 
+    Size: 81920 Bytes
+    Result: 37580 query1, 15509 query2 in 10s
+  Vertical Optimized: 
+    Size: 106496 Bytes
+    Result: 136028 query1, 34345 query2 in 10s
+----------------------
+#Tuples: 2000
+#Attributes: 10
+Sparsity: 0.5
+----------------------
+  Horizontal: 
+    Size: 163840 Bytes
+    Result: 66840 query1, 50655 query2 in 10s
+  Vertical: 
+    Size: 499712 Bytes
+    Result: 3575 query1, 1249 query2 in 10s
+  Vertical Optimized: 
+    Size: 761856 Bytes
+    Result: 113641 query1, 14584 query2 in 10s
+----------------------
+#Tuples: 2000
+#Attributes: 10
+Sparsity: 0.75
+----------------------
+  Horizontal: 
+    Size: 139264 Bytes
+    Result: 63108 query1, 55685 query2 in 10s
+  Vertical: 
+    Size: 286720 Bytes
+    Result: 201 query1, 806 query2 in 10s
+  Vertical Optimized: 
+    Size: 425984 Bytes
+    Result: 22998 query1, 9849 query2 in 10s
+----------------------
+#Tuples: 2000
+#Attributes: 10
+Sparsity: 0.9375
+----------------------
+  Horizontal: 
+    Size: 122880 Bytes
+    Result: 60285 query1, 54868 query2 in 10s
+  Vertical: 
+    Size: 114688 Bytes
+    Result: 14510 query1, 4874 query2 in 10s
+  Vertical Optimized: 
+    Size: 172032 Bytes
+    Result: 117079 query1, 9856 query2 in 10s
+----------------------
+#Tuples: 2000
+#Attributes: 15
+Sparsity: 0.5
+----------------------
+  Horizontal: 
+    Size: 196608 Bytes
+    Result: 57601 query1, 36113 query2 in 10s
+  Vertical: 
+    Size: 737280 Bytes
+    Result: 1349 query1, 598 query2 in 10s
+  Vertical Optimized: 
+    Size: 1097728 Bytes
+    Result: 84839 query1, 4465 query2 in 10s
+----------------------
+#Tuples: 2000
+#Attributes: 15
+Sparsity: 0.75
+----------------------
+  Horizontal: 
+    Size: 163840 Bytes
+    Result: 59946 query1, 45082 query2 in 10s
+  Vertical: 
+    Size: 401408 Bytes
+    Result: 2445 query1, 1207 query2 in 10s
+  Vertical Optimized: 
+    Size: 606208 Bytes
+    Result: 87931 query1, 3969 query2 in 10s
+----------------------
+#Tuples: 2000
+#Attributes: 15
+Sparsity: 0.9375
+----------------------
+  Horizontal: 
+    Size: 131072 Bytes
+    Result: 61119 query1, 53825 query2 in 10s
+  Vertical: 
+    Size: 139264 Bytes
+    Result: 7303 query1, 2567 query2 in 10s
+  Vertical Optimized: 
+    Size: 221184 Bytes
+    Result: 100826 query1, 3139 query2 in 10s
+----------------------
+#Tuples: 4000
+#Attributes: 5
+Sparsity: 0.5
+----------------------
+  Horizontal: 
+    Size: 245760 Bytes
+    Result: 41499 query1, 33160 query2 in 10s
+  Vertical: 
+    Size: 516096 Bytes
+    Result: 5647 query1, 1675 query2 in 10s
+  Vertical Optimized: 
+    Size: 770048 Bytes
+    Result: 127145 query1, 31067 query2 in 10s
+----------------------
+#Tuples: 4000
+#Attributes: 5
+Sparsity: 0.75
+----------------------
+  Horizontal: 
+    Size: 196608 Bytes
+    Result: 42544 query1, 37534 query2 in 10s
+  Vertical: 
+    Size: 278528 Bytes
+    Result: 12324 query1, 3491 query2 in 10s
+  Vertical Optimized: 
+    Size: 434176 Bytes
+    Result: 134172 query1, 37832 query2 in 10s
+----------------------
+#Tuples: 4000
+#Attributes: 5
+Sparsity: 0.9375
+----------------------
+  Horizontal: 
+    Size: 172032 Bytes
+    Result: 42712 query1, 44057 query2 in 10s
+  Vertical: 
+    Size: 122880 Bytes
+    Result: 29618 query1, 8792 query2 in 10s
+  Vertical Optimized: 
+    Size: 188416 Bytes
+    Result: 144571 query1, 35762 query2 in 10s
+----------------------
+#Tuples: 4000
+#Attributes: 10
+Sparsity: 0.5
+----------------------
+  Horizontal: 
+    Size: 352256 Bytes
+    Result: 40402 query1, 26142 query2 in 10s
+  Vertical: 
+    Size: 1007616 Bytes
+    Result: 1224 query1, 466 query2 in 10s
+  Vertical Optimized: 
+    Size: 1499136 Bytes
+    Result: 105449 query1, 11733 query2 in 10s
+----------------------
+#Tuples: 4000
+#Attributes: 10
+Sparsity: 0.75
+----------------------
+  Horizontal: 
+    Size: 262144 Bytes
+    Result: 42702 query1, 32637 query2 in 10s
+  Vertical: 
+    Size: 507904 Bytes
+    Result: 3380 query1, 1147 query2 in 10s
+  Vertical Optimized: 
+    Size: 778240 Bytes
+    Result: 103778 query1, 5313 query2 in 10s
+----------------------
+#Tuples: 4000
+#Attributes: 10
+Sparsity: 0.9375
+----------------------
+  Horizontal: 
+    Size: 212992 Bytes
+    Result: 40972 query1, 36573 query2 in 10s
+  Vertical: 
+    Size: 172032 Bytes
+    Result: 11902 query1, 2824 query2 in 10s
+  Vertical Optimized: 
+    Size: 270336 Bytes
+    Result: 117889 query1, 9777 query2 in 10s
+----------------------
+#Tuples: 4000
+#Attributes: 15
+Sparsity: 0.5
+----------------------
+  Horizontal: 
+    Size: 425984 Bytes
+    Result: 39542 query1, 22004 query2 in 10s
+  Vertical: 
+    Size: 1458176 Bytes
+    Result: 787 query1, 448 query2 in 10s
+  Vertical Optimized: 
+    Size: 2179072 Bytes
+    Result: 85978 query1, 3037 query2 in 10s
+----------------------
+#Tuples: 4000
+#Attributes: 15
+Sparsity: 0.75
+----------------------
+  Horizontal: 
+    Size: 294912 Bytes
+    Result: 42972 query1, 27900 query2 in 10s
+  Vertical: 
+    Size: 729088 Bytes
+    Result: 1508 query1, 620 query2 in 10s
+  Vertical Optimized: 
+    Size: 1122304 Bytes
+    Result: 87688 query1, 2990 query2 in 10s
+----------------------
+#Tuples: 4000
+#Attributes: 15
+Sparsity: 0.9375
+----------------------
+  Horizontal: 
+    Size: 221184 Bytes
+    Result: 40797 query1, 34173 query2 in 10s
+  Vertical: 
+    Size: 229376 Bytes
+    Result: 5429 query1, 1918 query2 in 10s
+  Vertical Optimized: 
+    Size: 344064 Bytes
+    Result: 100028 query1, 3048 query2 in 10s
+----------------------
+#Tuples: 8000
+#Attributes: 5
+Sparsity: 0.5
+----------------------
+  Horizontal: 
+    Size: 557056 Bytes
+    Result: 26258 query1, 18510 query2 in 10s
+  Vertical: 
+    Size: 1015808 Bytes
+    Result: 2515 query1, 1075 query2 in 10s
+  Vertical Optimized: 
+    Size: 1589248 Bytes
+    Result: 136383 query1, 36011 query2 in 10s
+----------------------
+#Tuples: 8000
+#Attributes: 5
+Sparsity: 0.75
+----------------------
+  Horizontal: 
+    Size: 376832 Bytes
+    Result: 27340 query1, 21730 query2 in 10s
+  Vertical: 
+    Size: 532480 Bytes
+    Result: 7700 query1, 1801 query2 in 10s
+  Vertical Optimized: 
+    Size: 770048 Bytes
+    Result: 134424 query1, 30852 query2 in 10s
+----------------------
+#Tuples: 8000
+#Attributes: 5
+Sparsity: 0.9375
+----------------------
+  Horizontal: 
+    Size: 319488 Bytes
+    Result: 26694 query1, 26595 query2 in 10s
+  Vertical: 
+    Size: 163840 Bytes
+    Result: 21655 query1, 4252 query2 in 10s
+  Vertical Optimized: 
+    Size: 270336 Bytes
+    Result: 148503 query1, 31489 query2 in 10s
+----------------------
+#Tuples: 8000
+#Attributes: 10
+Sparsity: 0.5
+----------------------
+  Horizontal: 
+    Size: 753664 Bytes
+    Result: 24231 query1, 14707 query2 in 10s
+  Vertical: 
+    Size: 2179072 Bytes
+    Result: 828 query1, 428 query2 in 10s
+  Vertical Optimized: 
+    Size: 3014656 Bytes
+    Result: 105956 query1, 11939 query2 in 10s
+----------------------
+#Tuples: 8000
+#Attributes: 10
+Sparsity: 0.75
+----------------------
+  Horizontal: 
+    Size: 524288 Bytes
+    Result: 24849 query1, 17405 query2 in 10s
+  Vertical: 
+    Size: 966656 Bytes
+    Result: 2083 query1, 786 query2 in 10s
+  Vertical Optimized: 
+    Size: 1482752 Bytes
+    Result: 111251 query1, 5854 query2 in 10s
+----------------------
+#Tuples: 8000
+#Attributes: 10
+Sparsity: 0.9375
+----------------------
+  Horizontal: 
+    Size: 401408 Bytes
+    Result: 22947 query1, 21010 query2 in 10s
+  Vertical: 
+    Size: 278528 Bytes
+    Result: 6147 query1, 1084 query2 in 10s
+  Vertical Optimized: 
+    Size: 425984 Bytes
+    Result: 121704 query1, 9680 query2 in 10s
+----------------------
+#Tuples: 8000
+#Attributes: 15
+Sparsity: 0.5
+----------------------
+  Horizontal: 
+    Size: 1073152 Bytes
+    Result: 24427 query1, 12141 query2 in 10s
+  Vertical: 
+    Size: 3088384 Bytes
+    Result: 394 query1, 230 query2 in 10s
+  Vertical Optimized: 
+    Size: 4620288 Bytes
+    Result: 80009 query1, 4388 query2 in 10s
+----------------------
+#Tuples: 8000
+#Attributes: 15
+Sparsity: 0.75
+----------------------
+  Horizontal: 
+    Size: 638976 Bytes
+    Result: 23019 query1, 14775 query2 in 10s
+  Vertical: 
+    Size: 1449984 Bytes
+    Result: 822 query1, 398 query2 in 10s
+  Vertical Optimized: 
+    Size: 2170880 Bytes
+    Result: 87055 query1, 3817 query2 in 10s
+----------------------
+#Tuples: 8000
+#Attributes: 15
+Sparsity: 0.9375
+----------------------
+  Horizontal: 
+    Size: 409600 Bytes
+    Result: 24021 query1, 19265 query2 in 10s
+  Vertical: 
+    Size: 376832 Bytes
+    Result: 3860 query1, 745 query2 in 10s
+  Vertical Optimized: 
+    Size: 598016 Bytes
+    Result: 97164 query1, 3014 query2 in 10s
