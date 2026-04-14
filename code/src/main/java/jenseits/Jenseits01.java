@@ -783,8 +783,11 @@ public class Jenseits01 {
         stmt.execute("DROP TABLE IF EXISTS generated CASCADE");
         var tableData = generate(conn, tupleCount, sparsity, attributeCount);
         H2V(conn, "generated"); // transform into vertical representation
-        V2Hspec(conn, "generated", 20); // create view to access using a horizontal view
-        String table = "h_view_vertical_spec_generated"; // as defined in V2H()
+        V2H(conn, "generated", 20); // create view to access using a horizontal view
+        // V2Hspec(conn, "generated", 20); // create view to access using a horizontal
+        // view
+        // String table = "h_view_vertical_spec_generated"; // as defined in V2H()
+        String table = "h_view_vertical_generated"; // as defined in V2H()
         createIndex(conn, "vertical_str_generated");
         createIndex(conn, "vertical_int_generated");
 
@@ -824,25 +827,42 @@ public class Jenseits01 {
 
         int queryCount2 = 0;
         start = System.currentTimeMillis();
+        String query2;
+        query2 = String.format(
+                "SELECT oid FROM %s WHERE ? = ?",
+                table);
+        PreparedStatement prepStmt2 = conn.prepareStatement(query2);
+
         while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
             queryCount2++;
 
             int attributeNum = rand.nextInt(1, attributeCount + 1);
-            String query2;
+
             if (attributes[attributeNum - 1].type == AttributeType.Integer) {
-                query2 = String.format(
-                        "SELECT oid FROM %s",
-                        table + "_a" + attributeNum,
-                        attributeNum,
-                        intValues.get(rand.nextInt(intValues.size())));
+                prepStmt2.setString(1, "a" + attributeNum);
+                prepStmt2.setString(2, Integer.toString(intValues.get(rand.nextInt(intValues.size()))));
             } else {
-                query2 = String.format(
-                        "SELECT oid FROM %s",
-                        table + "_a" + attributeNum,
-                        attributeNum,
-                        varcharValues.get(rand.nextInt(varcharValues.size())));
+                prepStmt2.setString(1, "a" + attributeNum);
+                prepStmt2.setString(2, varcharValues.get(rand.nextInt(varcharValues.size())));
             }
-            stmt.execute(query2);
+            prepStmt2.execute();
+
+            /*
+             * if (attributes[attributeNum - 1].type == AttributeType.Integer) {
+             * query2 = String.format(
+             * "SELECT oid FROM %s",
+             * table + "_a" + attributeNum,
+             * attributeNum,
+             * intValues.get(rand.nextInt(intValues.size())));
+             * } else {
+             * query2 = String.format(
+             * "SELECT oid FROM %s",
+             * table + "_a" + attributeNum,
+             * attributeNum,
+             * varcharValues.get(rand.nextInt(varcharValues.size())));
+             * }
+             * stmt.execute(query2);
+             */
         }
         IO.println("    Result: " + queryCount1 + " query1, " + queryCount2 + " query2 in " + unitInSeconds + "s");
     }
