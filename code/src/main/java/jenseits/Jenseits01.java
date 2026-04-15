@@ -718,7 +718,7 @@ public class Jenseits01 {
     private static long tableSize(Connection conn, String table) throws Exception {
         ResultSet result = conn.createStatement()
                 .executeQuery(
-                        String.format("SELECT pg_total_relation_size('\"%s\"') AS size", table));
+                        String.format("SELECT pg_total_relation_size('\"%s\"') AS size", table)); // includes index size
         return result.next() ? result.getInt(1) : -1;
     }
 
