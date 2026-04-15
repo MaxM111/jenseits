@@ -38,7 +38,8 @@ public class Jenseits01 {
         H2V(conn, "generated");
         V2H(conn, "generated", 9);
 
-        V2H(conn, "v_toy", 100);
+        H2V(conn, "h_toy");
+        V2H(conn, "h_toy", 100);
 
         benchmark(conn);
     }
@@ -415,24 +416,27 @@ public class Jenseits01 {
     static void H2V(Connection conn, String horizontalRelation) throws Exception {
         String verticalStrName = "vertical_str_" + horizontalRelation;
         String verticalIntName = "vertical_int_" + horizontalRelation;
+        String primaryKeyTable = "primary_keys_" + horizontalRelation;
         var statement = conn.createStatement();
-        statement.execute(String.format("DROP TABLE IF EXISTS %s, %s CASCADE", verticalStrName, verticalIntName));
+        statement.execute(String.format("DROP TABLE IF EXISTS %s, %s, %s CASCADE", verticalStrName, verticalIntName,
+                primaryKeyTable));
 
         List<Attribute> attributes = queryAttributes(conn, horizontalRelation);
 
-        createPartitionedVerticalTable(statement, verticalStrName, verticalIntName);
+        createPartitionedVerticalTable(statement, verticalStrName, verticalIntName, primaryKeyTable);
 
         String query = String.format("SELECT * FROM %s", horizontalRelation);
         ResultSet rows = conn.createStatement().executeQuery(query);
 
         while (rows.next()) {
-            transformRow(conn, rows, attributes, verticalStrName, verticalIntName);
+            transformRow(conn, rows, attributes, verticalStrName, verticalIntName, primaryKeyTable);
         }
     }
 
     private static void transformRow(Connection conn, ResultSet rows, List<Attribute> attributes,
-            String verticalStrName, String verticalIntName) throws Exception {
+            String verticalStrName, String verticalIntName, String primaryKeysTableName) throws Exception {
         int oid = rows.getInt("oid");
+        conn.createStatement().execute(String.format("INSERT INTO %s VALUES (%d)", primaryKeysTableName, oid));
         for (var attribute : attributes) {
             switch (attribute.type) {
                 case AttributeType.String -> {
@@ -502,7 +506,7 @@ public class Jenseits01 {
     }
 
     private static void createPartitionedVerticalTable(Statement statement, String verticalStrName,
-            String verticalIntName) throws Exception {
+            String verticalIntName, String primaryKeysTableName) throws Exception {
         String createStringTable = String.format("""
                 CREATE TABLE %s (
                     oid INTEGER,
@@ -519,6 +523,7 @@ public class Jenseits01 {
                 """, verticalIntName);
         statement.execute(createStringTable);
         statement.execute(createIntTable);
+        statement.execute(String.format("CREATE TABLE %s (oid INTEGER)", primaryKeysTableName));
     }
 
     /*
@@ -528,10 +533,10 @@ public class Jenseits01 {
      * // accessible to the user
      */
     static void V2H(Connection conn, String horizontalRelation, int numMaxAttributes) throws Exception {
-
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_" + horizontalRelation;
         String verticalIntName = "vertical_int_" + horizontalRelation;
+        String primaryKeyName = "primary_keys_" + horizontalRelation;
 
         DatabaseMetaData meta = conn.getMetaData();
         ResultSet primaryKeyResults = meta.getPrimaryKeys(null, null, verticalStrName);
@@ -557,10 +562,12 @@ public class Jenseits01 {
         stmt.execute(String.format("""
                 CREATE VIEW h_view_vertical_%s AS
                 SELECT *
-                FROM %s AS str
-                FULL OUTER JOIN %s AS int
+                FROM %s
+                FULL OUTER JOIN %s
                 USING (oid)
-                """, horizontalRelation, strViewName, intViewName));
+                FULL OUTER JOIN %s
+                USING (oid)
+                """, horizontalRelation, strViewName, intViewName, primaryKeyName));
     }
 
     /*
