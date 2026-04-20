@@ -9,8 +9,10 @@ import java.nio.file.StandardOpenOption;
 public class Logger implements AutoCloseable {
     private final BufferedWriter writer;
 
-    public Logger(String fileName) throws IOException {
-        Path path = Path.of(fileName);
+    public Logger(String directory, String fileName) throws IOException {
+        Path dir = Path.of(directory);
+        Files.createDirectories(dir);
+        Path path = dir.resolve(fileName);
         writer = Files.newBufferedWriter(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 
