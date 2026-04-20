@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+
 import java.sql.DatabaseMetaData;
 
 import jenseits.setup.DB;
@@ -17,7 +18,11 @@ import jenseits.setup.Pair;
 import jenseits.util.*;
 
 public class Jenseits01 {
+
+    private static Logger logger;
+
     public static void main(String[] args) throws Exception {
+        logger = new Logger("logs", "log.csv");
         var conn = DB.getConnection(Database.POSTGRESQL);
         conn.setAutoCommit(true);
 
@@ -42,6 +47,7 @@ public class Jenseits01 {
         V2H(conn, "h_toy", 100);
 
         benchmark(conn);
+        logger.close();
     }
 
     // ----------------------- PHASE 1 -----------------------
@@ -629,6 +635,9 @@ public class Jenseits01 {
         var stmt = conn.createStatement();
         int unitInSeconds = 10; // unit in which we count the number of queries
 
+        logger.log("representation", "tupleCount", "attributeCount", "sparsity", "tableSize", "queryCount1",
+                "queryCount2", "duration");
+
         for (var tupleCount : tupleCounts) {
             for (var attributeCount : attributeCounts) {
                 for (var sparsity : sparsityValues) {
@@ -638,11 +647,20 @@ public class Jenseits01 {
                     IO.println("Sparsity: " + sparsity);
                     IO.println("----------------------");
                     IO.println("  Horizontal: ");
+                    logger.logPartial("Horizontal", String.valueOf(tupleCount), String.valueOf(attributeCount),
+                            String.valueOf(sparsity));
                     horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds);
                     IO.println("  Vertical: ");
+                    logger.logPartial("Vertical", String.valueOf(tupleCount), String.valueOf(attributeCount),
+                            String.valueOf(sparsity));
+
                     verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds);
                     IO.println("  Vertical Optimized: ");
+                    logger.logPartial("Vertical Optimized", String.valueOf(tupleCount),
+                            String.valueOf(attributeCount),
+                            String.valueOf(sparsity));
                     verticalBenchmarkOpt(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds);
+                    logger.flush();
                 }
             }
         }
@@ -655,6 +673,7 @@ public class Jenseits01 {
         String table = "generated"; // as defined in generate()
 
         long tableSize = tableSize(conn, table);
+        logger.logPartial(String.valueOf(tableSize));
         IO.println("    Size: " + tableSize + " Bytes");
 
         // benchmarkTable(stmt, table, tableData, unitInSeconds, tupleCount, sparsity,
@@ -671,8 +690,8 @@ public class Jenseits01 {
         String table = "h_view_vertical_generated"; // as defined in V2H()
 
         long tableSize = tableSize(conn, "vertical_str_generated") + tableSize(conn, "vertical_int_generated");
+        logger.logPartial(String.valueOf(tableSize));
         IO.println("    Size: " + tableSize + " Bytes");
-
         benchmarkTable(stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount);
     }
 
@@ -717,6 +736,7 @@ public class Jenseits01 {
             stmt.execute(query2);
         }
         IO.println("    Result: " + queryCount1 + " query1, " + queryCount2 + " query2 in " + unitInSeconds + "s");
+        logger.log(String.valueOf(queryCount1), String.valueOf(queryCount2), String.valueOf(unitInSeconds));
     }
 
     /*
@@ -800,6 +820,7 @@ public class Jenseits01 {
 
         long tableSize = tableSize(conn, "vertical_str_generated") + tableSize(conn, "vertical_int_generated");
         IO.println("    Size: " + tableSize + " Bytes");
+        logger.logPartial(String.valueOf(tableSize));
 
         benchmarkTableOpt(conn, stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount);
     }
@@ -872,6 +893,7 @@ public class Jenseits01 {
              */
         }
         IO.println("    Result: " + queryCount1 + " query1, " + queryCount2 + " query2 in " + unitInSeconds + "s");
+        logger.log(String.valueOf(queryCount1), String.valueOf(queryCount2), String.valueOf(unitInSeconds));
     }
 
 }

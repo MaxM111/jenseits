@@ -26,6 +26,17 @@ public class Logger implements AutoCloseable {
         writer.newLine();
     }
 
+    public void logPartial(String... values) throws IOException {
+        for (int i = 0; i < values.length; i++) {
+            writer.write(values[i] == null ? "" : values[i]);
+            writer.write(",");
+        }
+    }
+
+    public void flush() throws IOException {
+        writer.flush();
+    }
+
     @Override
     public void close() throws IOException {
         writer.close();
