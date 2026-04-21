@@ -849,9 +849,9 @@ public class Jenseits01 {
         String verticalIntName = "vertical_int_generated";
 
         String subqueryStr = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalStrName,
-                AttributeType.String, "WHERE oid = par_oid", false);
+                AttributeType.String, "WHERE oid = par_oid");
         String subqueryInt = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalIntName,
-                AttributeType.Integer, "WHERE oid = par_oid", false);
+                AttributeType.Integer, "WHERE oid = par_oid");
 
         stmt.execute("DROP FUNCTION IF EXISTS q_i(INTEGER);");
         StringBuilder qb = new StringBuilder(
@@ -883,7 +883,7 @@ public class Jenseits01 {
      * Once for attributes of type varchar and once for attributes of type integer
      */
     private static String buildSubqueryHorizontalFromVerticalPartition(TableData tableData, String tableName,
-            AttributeType type, String whereClause, boolean use_q_ii_condition) {
+            AttributeType type, String whereClause) {
         var attributes = tableData.attributes;
         StringBuilder qb = new StringBuilder();
         qb.append("(SELECT v.oid as oid");
@@ -900,13 +900,12 @@ public class Jenseits01 {
         for (var attribute : attributes) {
             if (attribute.type == type) {
                 qb.append(String.format(
-                        " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key = '%s' %s)\n",
+                        " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key = '%s')\n",
                         tableName,
                         j,
                         j,
                         j,
-                        attribute.name,
-                        false ? String.format("AND v%d.val = param_value", j) : ""));
+                        attribute.name));
             }
             j++;
         }
