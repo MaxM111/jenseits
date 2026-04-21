@@ -642,29 +642,30 @@ public class Jenseits01 {
                     IO.println("#Tuples: " + tupleCount);
                     IO.println("#Attributes: " + attributeCount);
                     IO.println("Sparsity: " + sparsity);
-                    /*
-                     * IO.println("----------------------");
-                     * IO.println("  Horizontal: ");
-                     * 
-                     * logger.logPartial("Horizontal", String.valueOf(tupleCount),
-                     * String.valueOf(attributeCount),
-                     * String.valueOf(sparsity));
-                     * horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
-                     * unitInSeconds);
-                     * IO.println("  Vertical: ");
-                     * logger.logPartial("Vertical", String.valueOf(tupleCount),
-                     * String.valueOf(attributeCount),
-                     * String.valueOf(sparsity));
-                     * 
-                     * verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
-                     * unitInSeconds);
-                     * 
-                     */
+                    IO.println("----------------------");
+                    IO.println("  Horizontal: ");
+                    logger.logPartial("Horizontal", String.valueOf(tupleCount),
+                            String.valueOf(attributeCount),
+                            String.valueOf(sparsity));
+                    horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
+                            unitInSeconds);
+                    IO.println("  Vertical: ");
+                    logger.logPartial("Vertical", String.valueOf(tupleCount),
+                            String.valueOf(attributeCount),
+                            String.valueOf(sparsity));
+
+                    verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
+                            unitInSeconds);
                     IO.println("  Vertical Optimized: ");
                     logger.logPartial("Vertical Optimized", String.valueOf(tupleCount),
                             String.valueOf(attributeCount),
                             String.valueOf(sparsity));
-                    verticalBenchmarkOpt(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds);
+                    verticalBenchmarkOpt(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds, false);
+                    IO.println("  Vertical Functions: ");
+                    logger.logPartial("Vertical Functions", String.valueOf(tupleCount),
+                            String.valueOf(attributeCount),
+                            String.valueOf(sparsity));
+                    verticalBenchmarkOpt(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds, true);
                     logger.flush();
                 }
             }
@@ -760,7 +761,7 @@ public class Jenseits01 {
      * Benchmarks the vertical tables using optimizations
      */
     private static void verticalBenchmarkOpt(Connection conn, Statement stmt, int tupleCount, double sparsity,
-            int attributeCount, int unitInSeconds) throws Exception {
+            int attributeCount, int unitInSeconds, boolean useFunctions) throws Exception {
         stmt.execute("DROP TABLE IF EXISTS generated CASCADE");
         var tableData = generate(conn, tupleCount, sparsity, attributeCount);
         H2V(conn, "generated"); // transform into vertical representation
@@ -776,8 +777,11 @@ public class Jenseits01 {
         IO.println("    Size: " + tableSize + " Bytes");
         logger.logPartial(String.valueOf(tableSize));
 
-        benchmarkTableOpt(conn, stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount, false);
-        benchmarkTableOpt(conn, stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount, true);
+        if (useFunctions) {
+            benchmarkTableOpt(conn, stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount, true);
+        } else {
+            benchmarkTableOpt(conn, stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount, false);
+        }
     }
 
     private static void createIndex(Connection conn, String table) throws Exception {
@@ -910,25 +914,6 @@ public class Jenseits01 {
         return qb.toString();
     }
 
-    private static String buildSubqueryHorizontalFromVerticalPartition2(TableData tableData, String tableName,
-            AttributeType type) {
-        var attributes = tableData.attributes;
-        StringBuilder qb = new StringBuilder();
-        qb.append("(SELECT v.oid as oid");
-        for (var attribute : attributes) {
-            if (attribute.type == type) {
-                qb.append(String.format(", %s.val as %s ", attribute.name, attribute.name));
-            }
-        }
-        qb.append(String.format("FROM ((SELECT DISTINCT oid from %s) AS v\n",
-                tableName));
-        qb.append(String.format(
-                " LEFT OUTER JOIN %s AS param_a_i ON (v.oid = param_a_i.oid AND param_a_i.key = param_a_i AND param_a_i.val = param_value )\n",
-                tableName));
-        qb.append(") ORDER BY oid)");
-        return qb.toString();
-    }
-
     /*
      * We overload the function to work with both string and integer parameters.
      */
@@ -949,7 +934,6 @@ public class Jenseits01 {
         StringBuilder qb = new StringBuilder(
                 "CREATE FUNCTION q_ii(param_a_i VARCHAR(10), param_value INTEGER) RETURNS TABLE(oid INTEGER");
         appendFunctionDefinition(qb, attributes, stringTableQuery, resultRowIntQuery, AttributeType.Integer);
-        IO.println(qb.toString());
         stmt.execute(qb.toString());
 
         // function 2
