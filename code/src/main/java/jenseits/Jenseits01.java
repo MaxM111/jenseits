@@ -989,7 +989,6 @@ public class Jenseits01 {
         StringBuilder qb = new StringBuilder(
                 "CREATE FUNCTION q_ii(param_a_i VARCHAR(10), param_value INTEGER) RETURNS TABLE(oid INTEGER");
         appendFunctionDefinition(qb, attributes, resultRowIntQuery, AttributeType.Integer);
-        IO.println(qb.toString());
         stmt.execute(qb.toString());
 
         // function 2
