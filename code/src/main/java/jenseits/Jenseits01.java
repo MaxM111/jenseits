@@ -906,10 +906,68 @@ public class Jenseits01 {
                         j,
                         j,
                         attribute.name,
-                        use_q_ii_condition ? String.format("AND v%d.val = param_value", j) : ""));
+                        false ? String.format("AND v%d.val = param_value", j) : ""));
             }
             j++;
         }
+        qb.append(") ORDER BY oid)");
+        return qb.toString();
+    }
+
+    private static String buildSubqueryHorizontalFromVerticalPartition2(TableData tableData, String stringTableName,
+            String intTableName, AttributeType firstType, String whereClause, boolean use_q_ii_condition) {
+        var attributes = tableData.attributes;
+        var firstPartitionTableName = firstType == AttributeType.String ? stringTableName : intTableName;
+        var secondPartitionTableName = firstType == AttributeType.String ? intTableName : stringTableName;
+
+        StringBuilder qb = new StringBuilder();
+        qb.append("(SELECT v.oid as oid");
+
+        int i = 0;
+        for (var attribute : attributes) {
+            if (attribute.type == AttributeType.String) {
+                qb.append(String.format(", v%d.val as %s ", i, attribute.name));
+            }
+            i++;
+        }
+
+        i = 0;
+        for (var attribute : attributes) {
+            if (attribute.type == AttributeType.Integer) {
+                qb.append(String.format(", v%d.val as %s ", i, attribute.name));
+            }
+            i++;
+        }
+        qb.append(String.format("FROM ((SELECT DISTINCT oid from %s %s) AS v\n", firstPartitionTableName, whereClause));
+
+        int j = 0;
+        for (var attribute : attributes) {
+            if (attribute.type == firstType) {
+                qb.append(String.format(
+                        " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key = '%s')\n",
+                        firstPartitionTableName,
+                        j,
+                        j,
+                        j,
+                        attribute.name));
+            }
+            j++;
+        }
+
+        j = 0;
+        for (var attribute : attributes) {
+            if (attribute.type != firstType) {
+                qb.append(String.format(
+                        " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key = '%s')\n",
+                        secondPartitionTableName,
+                        j,
+                        j,
+                        j,
+                        attribute.name));
+            }
+            j++;
+        }
+
         qb.append(") ORDER BY oid)");
         return qb.toString();
     }
@@ -924,34 +982,31 @@ public class Jenseits01 {
         var attributes = tableData.attributes;
 
         // function 1
-        stmt.execute("DROP FUNCTION IF EXISTS q_ii(VARCHAR(100), INTEGER)");
+        stmt.execute("DROP FUNCTION IF EXISTS q_ii(VARCHAR(10), INTEGER)");
 
-        String resultRowIntQuery = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalIntName,
-                AttributeType.Integer, "", true);
-        String stringTableQuery = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalStrName,
-                AttributeType.String, "", false);
+        String resultRowIntQuery = buildSubqueryHorizontalFromVerticalPartition2(tableData, verticalStrName,
+                verticalIntName, AttributeType.Integer, "WHERE key = param_a_i AND val = param_value", true);
 
         StringBuilder qb = new StringBuilder(
                 "CREATE FUNCTION q_ii(param_a_i VARCHAR(10), param_value INTEGER) RETURNS TABLE(oid INTEGER");
-        appendFunctionDefinition(qb, attributes, stringTableQuery, resultRowIntQuery, AttributeType.Integer);
+        appendFunctionDefinition(qb, attributes, resultRowIntQuery, AttributeType.Integer);
+        IO.println(qb.toString());
         stmt.execute(qb.toString());
 
         // function 2
-        stmt.execute("DROP FUNCTION IF EXISTS q_ii(VARCHAR(100), VARCHAR(100))");
+        stmt.execute("DROP FUNCTION IF EXISTS q_ii(VARCHAR(10), VARCHAR(100))");
 
-        String intTableQuery = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalIntName,
-                AttributeType.Integer, "", false);
-        String resultRowStrQuery = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalStrName,
-                AttributeType.String, "", true);
+        String resultRowStrQuery = buildSubqueryHorizontalFromVerticalPartition2(tableData, verticalStrName,
+                verticalIntName, AttributeType.String, "WHERE key = param_a_i AND val = param_value", true);
 
         StringBuilder builder = new StringBuilder(
                 "CREATE FUNCTION q_ii(param_a_i VARCHAR(10), param_value VARCHAR(100)) RETURNS TABLE(oid INTEGER");
-        appendFunctionDefinition(builder, attributes, resultRowStrQuery, intTableQuery, AttributeType.String);
+        appendFunctionDefinition(builder, attributes, resultRowStrQuery, AttributeType.String);
         stmt.execute(builder.toString());
     }
 
-    private static void appendFunctionDefinition(StringBuilder builder, Attribute[] attributes, String subqueryStr,
-            String subqueryInt, AttributeType type) {
+    private static void appendFunctionDefinition(StringBuilder builder, Attribute[] attributes, String query,
+            AttributeType type) {
         for (var attribute : attributes) {
             if (attribute.type == AttributeType.String) {
                 builder.append(", ");
@@ -966,20 +1021,8 @@ public class Jenseits01 {
                 builder.append(String.format(" %s", attribute.type.sqlType()));
             }
         }
-
         builder.append(") LANGUAGE SQL STABLE AS $$ ");
-        builder.append("SELECT * FROM (" + subqueryStr + " JOIN " + subqueryInt);
-        builder.append(" USING (oid)) AS res ");
-        builder.append("""
-                WHERE EXISTS (
-                    SELECT 1
-                    FROM %s t
-                    WHERE t.oid = res.oid
-                      AND t.key = param_a_i
-                      AND t.val::TEXT = param_value::TEXT
-                )
-                """.formatted(
-                type == AttributeType.Integer ? "vertical_int_generated" : "vertical_str_generated"));
-        builder.append(" $$;");
+        builder.append("SELECT * FROM " + query);
+        builder.append(" $$");
     }
 }
