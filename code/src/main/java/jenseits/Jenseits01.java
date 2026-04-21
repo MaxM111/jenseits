@@ -955,7 +955,7 @@ public class Jenseits01 {
         stmt.execute(qb.toString());
 
         // function 2
-        stmt.execute("DROP FUNCTION IF EXISTS q_ii(param_a_i VARCHAR(100), param_value VARCHAR(100))");
+        stmt.execute("DROP FUNCTION IF EXISTS q_ii(VARCHAR(100), VARCHAR(100))");
 
         String intTableQuery = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalIntName,
                 AttributeType.Integer, "", false);
