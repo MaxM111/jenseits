@@ -646,20 +646,20 @@ public class Jenseits01 {
                     IO.println("Sparsity: " + sparsity);
                     IO.println("----------------------");
                     IO.println("  Horizontal: ");
-                    /*
-                     * logger.logPartial("Horizontal", String.valueOf(tupleCount),
-                     * String.valueOf(attributeCount),
-                     * String.valueOf(sparsity));
-                     * horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
-                     * unitInSeconds);
-                     * IO.println("  Vertical: ");
-                     * logger.logPartial("Vertical", String.valueOf(tupleCount),
-                     * String.valueOf(attributeCount),
-                     * String.valueOf(sparsity));
-                     * 
-                     * verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
-                     * unitInSeconds);
-                     */
+
+                    logger.logPartial("Horizontal", String.valueOf(tupleCount),
+                            String.valueOf(attributeCount),
+                            String.valueOf(sparsity));
+                    horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
+                            unitInSeconds);
+                    IO.println("  Vertical: ");
+                    logger.logPartial("Vertical", String.valueOf(tupleCount),
+                            String.valueOf(attributeCount),
+                            String.valueOf(sparsity));
+
+                    verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
+                            unitInSeconds);
+
                     IO.println("  Vertical Optimized: ");
                     logger.logPartial("Vertical Optimized", String.valueOf(tupleCount),
                             String.valueOf(attributeCount),
