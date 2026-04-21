@@ -848,14 +848,14 @@ public class Jenseits01 {
                 "CREATE FUNCTION q_i (par_oid INTEGER) RETURNS TABLE(oid INTEGER");
         var attributes = tableData.attributes;
         for (var attribute : attributes) {
-            if (attribute.type == attribute.type.String) {
+            if (attribute.type == AttributeType.String) {
                 qb.append(", ");
                 qb.append(attribute.name);
                 qb.append(String.format(" %s", attribute.type.sqlType()));
             }
         }
         for (var attribute : attributes) {
-            if (attribute.type == attribute.type.Integer) {
+            if (attribute.type == AttributeType.Integer) {
                 qb.append(", ");
                 qb.append(attribute.name);
                 qb.append(String.format(" %s", attribute.type.sqlType()));
