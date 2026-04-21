@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.lang.StringBuilder;
 
 import java.sql.DatabaseMetaData;
 
@@ -33,8 +34,6 @@ public class Jenseits01 {
 
         createTableVertical(conn);
         fillValueVerticalManually(conn);
-
-        createViewV2H(conn);
 
         generate(conn, 10, 0.3, 10);
 
@@ -647,14 +646,20 @@ public class Jenseits01 {
                     IO.println("Sparsity: " + sparsity);
                     IO.println("----------------------");
                     IO.println("  Horizontal: ");
-                    logger.logPartial("Horizontal", String.valueOf(tupleCount), String.valueOf(attributeCount),
-                            String.valueOf(sparsity));
-                    horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds);
-                    IO.println("  Vertical: ");
-                    logger.logPartial("Vertical", String.valueOf(tupleCount), String.valueOf(attributeCount),
-                            String.valueOf(sparsity));
-
-                    verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds);
+                    /*
+                     * logger.logPartial("Horizontal", String.valueOf(tupleCount),
+                     * String.valueOf(attributeCount),
+                     * String.valueOf(sparsity));
+                     * horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
+                     * unitInSeconds);
+                     * IO.println("  Vertical: ");
+                     * logger.logPartial("Vertical", String.valueOf(tupleCount),
+                     * String.valueOf(attributeCount),
+                     * String.valueOf(sparsity));
+                     * 
+                     * verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
+                     * unitInSeconds);
+                     */
                     IO.println("  Vertical Optimized: ");
                     logger.logPartial("Vertical Optimized", String.valueOf(tupleCount),
                             String.valueOf(attributeCount),
@@ -817,6 +822,7 @@ public class Jenseits01 {
         String table = "h_view_vertical_generated"; // as defined in V2H()
         createIndex(conn, "vertical_str_generated");
         createIndex(conn, "vertical_int_generated");
+        createDBMSFunction(conn, table, tableData);
 
         long tableSize = tableSize(conn, "vertical_str_generated") + tableSize(conn, "vertical_int_generated");
         IO.println("    Size: " + tableSize + " Bytes");
@@ -844,8 +850,9 @@ public class Jenseits01 {
 
         int queryCount1 = 0;
         long start = System.currentTimeMillis();
-        var query1 = String.format("SELECT * FROM %s WHERE oid = ?",
-                table); // see generate()
+        // var query1 = String.format("SELECT * FROM %s WHERE oid = ?", table); // see
+        // generate()
+        var query1 = String.format("SELECT * FROM q_i(?)", table); // see generate()
         PreparedStatement prepStmt1 = conn.prepareStatement(query1);
         while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
             queryCount1++;
@@ -894,6 +901,53 @@ public class Jenseits01 {
         }
         IO.println("    Result: " + queryCount1 + " query1, " + queryCount2 + " query2 in " + unitInSeconds + "s");
         logger.log(String.valueOf(queryCount1), String.valueOf(queryCount2), String.valueOf(unitInSeconds));
+    }
+
+    private static void createDBMSFunction(Connection conn, String table, TableData tableData) throws Exception {
+        Statement stmt = conn.createStatement();
+        String verticalStrName = "vertical_str_generated";
+        String verticalIntName = "vertical_int_generated";
+        String horizontalRelation = "generated";
+
+        var query1 = String.format("""
+                CREATE view vertical_all_%s AS
+                SELECT oid, key, val::VARCHAR(10) as val FROM %s
+                UNION
+                SELECT oid,key,val FROM %s
+                ORDER BY oid;
+                """, horizontalRelation, verticalIntName, verticalStrName);
+        stmt.execute(query1);
+
+        StringBuilder qb = new StringBuilder(
+                "CREATE OR REPLACE FUNCTION q_i (par_oid INTEGER) RETURNS TABLE(oid INTEGER");
+        var attributes = tableData.attributes;
+        for (var attribute : attributes) {
+            qb.append(", ");
+            qb.append(attribute.name);
+            qb.append(" TEXT");
+        }
+        qb.append(") LANGUAGE SQL STABLE AS $$ ");
+        qb.append("SELECT v.oid as oid");
+        int i = 0;
+        for (var attribute : attributes) {
+            qb.append(String.format(", v%d.val as %s ", i, attribute.name));
+            i++;
+        }
+        qb.append(String.format("FROM ((SELECT DISTINCT oid from vertical_all_%s where oid = par_oid ) AS v",
+                horizontalRelation));
+        int j = 0;
+        for (var attribute : attributes) {
+            qb.append(String.format(
+                    " LEFT OUTER JOIN vertical_all_%s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')",
+                    horizontalRelation,
+                    j,
+                    j,
+                    j,
+                    attribute.name));
+            j++;
+        }
+        qb.append(") ORDER BY oid $$;");
+        stmt.execute(qb.toString());
     }
 
 }
