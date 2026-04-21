@@ -771,13 +771,15 @@ public class Jenseits01 {
         createIndex(conn, "vertical_str_generated");
         createIndex(conn, "vertical_int_generated");
         createDBMSFunction_q_i(conn, table, tableData);
+        createDBMSFunction_q_ii(conn, table, tableData);
 
         long tableSize = tableSize(conn, "vertical_str_generated") + tableSize(conn, "vertical_int_generated")
                 + tableSize(conn, "primary_keys_generated");
         IO.println("    Size: " + tableSize + " Bytes");
         logger.logPartial(String.valueOf(tableSize));
 
-        benchmarkTableOpt(conn, stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount);
+        benchmarkTableOpt(conn, stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount, false);
+        benchmarkTableOpt(conn, stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount, true);
     }
 
     private static void createIndex(Connection conn, String table) throws Exception {
@@ -791,7 +793,7 @@ public class Jenseits01 {
      */
     private static void benchmarkTableOpt(Connection conn, Statement stmt, String table, TableData tableData,
             int unitInSeconds,
-            int tupleCount, double sparsity, int attributeCount) throws Exception {
+            int tupleCount, double sparsity, int attributeCount, boolean useDBMSFunction) throws Exception {
         var rand = new Random();
         var attributes = tableData.attributes;
         var intValues = tableData.intValues;
@@ -799,9 +801,8 @@ public class Jenseits01 {
 
         int queryCount1 = 0;
         long start = System.currentTimeMillis();
-        // var query1 = String.format("SELECT * FROM %s WHERE oid = ?", table); // see
-        // generate()
-        var query1 = String.format("SELECT * FROM q_i(?)", table); // see generate()
+        var query1 = useDBMSFunction ? String.format("SELECT * FROM q_i(?)", table)
+                : String.format("SELECT * FROM %s WHERE oid = ?", table); // see generate()
         PreparedStatement prepStmt1 = conn.prepareStatement(query1);
         while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
             queryCount1++;
@@ -812,9 +813,10 @@ public class Jenseits01 {
         int queryCount2 = 0;
         start = System.currentTimeMillis();
         String query2;
-        query2 = String.format(
-                "SELECT oid FROM %s WHERE ? = ?",
-                table);
+        query2 = useDBMSFunction ? String.format("SELECT * FROM q_ii(?, ?)")
+                : String.format(
+                        "SELECT oid FROM %s WHERE ? = ?",
+                        table);
         PreparedStatement prepStmt2 = conn.prepareStatement(query2);
 
         while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
