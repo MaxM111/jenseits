@@ -790,6 +790,8 @@ public class Jenseits01 {
         stmt.execute(String.format("CREATE INDEX %s_oid_key ON %s (oid,key);", table, table));
     }
 
+    // Phase 3 (somewhat Phase 2 as well):
+
     /*
      * Benchmarks a table using Optimizations
      */
@@ -841,8 +843,7 @@ public class Jenseits01 {
 
     // Note on SQL procedures: We order the attributes, so that oid is first, then
     // the strings, then the integers. This makes
-    // the return type consistent.
-
+    // the return type of the table consistent.
     private static void createDBMSFunction_q_i(Connection conn, String table, TableData tableData) throws Exception {
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_generated";
@@ -877,8 +878,7 @@ public class Jenseits01 {
     }
 
     /*
-     * To ensure consistent attribute order, this method should be called twice:
-     * Once for attributes of type varchar and once for attributes of type integer
+     * API-Function implementation of the first query
      */
     private static String buildSubqueryHorizontalFromVerticalPartition(TableData tableData, String primaryKeyTable,
             String verticalStrName, String verticalIntName, String whereClause) {
@@ -937,6 +937,9 @@ public class Jenseits01 {
         return qb.toString();
     }
 
+    /*
+     * API-Function implementation of the second query
+     */
     private static String buildSubqueryHorizontalFromVerticalPartition2(TableData tableData, String stringTableName,
             String intTableName, AttributeType firstType, String whereClause, boolean use_q_ii_condition) {
         var attributes = tableData.attributes;
