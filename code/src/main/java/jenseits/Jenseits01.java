@@ -867,7 +867,6 @@ public class Jenseits01 {
         qb.append("SELECT * FROM " + subquery1 + " JOIN " + subquery2);
         qb.append(" USING (oid)");
         qb.append(" $$;");
-        IO.println(qb.toString());
         stmt.execute(qb.toString());
     }
 
