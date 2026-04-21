@@ -914,7 +914,7 @@ public class Jenseits01 {
         qb.append(String.format("FROM ((SELECT DISTINCT oid from %s) AS v\n",
                 tableName));
         qb.append(String.format(
-                " LEFT OUTER JOIN %s AS param_a_i ON (v.oid = param_a_i.oid AND param_a_i.key = param_a_i AND v0.val = param_value )\n",
+                " LEFT OUTER JOIN %s AS param_a_i ON (v.oid = param_a_i.oid AND param_a_i.key = param_a_i AND param_a_i.val = param_value )\n",
                 tableName));
         qb.append(") ORDER BY oid)");
         return qb.toString();
