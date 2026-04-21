@@ -947,7 +947,7 @@ public class Jenseits01 {
                 AttributeType.String, "", false);
 
         StringBuilder qb = new StringBuilder(
-                "CREATE FUNCTION q_ii(param_a_i VARCHAR(100), param_value INTEGER) RETURNS TABLE(oid INTEGER");
+                "CREATE FUNCTION q_ii(param_a_i VARCHAR(10), param_value INTEGER) RETURNS TABLE(oid INTEGER");
         appendFunctionDefinition(qb, attributes, stringTableQuery, resultRowIntQuery);
         IO.println(qb.toString());
         stmt.execute(qb.toString());
@@ -961,7 +961,7 @@ public class Jenseits01 {
                 AttributeType.String, "", true);
 
         StringBuilder builder = new StringBuilder(
-                "CREATE FUNCTION q_ii(param_a_i VARCHAR(100), param_value VARCHAR(100)) RETURNS TABLE(oid INTEGER");
+                "CREATE FUNCTION q_ii(param_a_i VARCHAR(10), param_value VARCHAR(100)) RETURNS TABLE(oid INTEGER");
         appendFunctionDefinition(builder, attributes, resultRowStrQuery, intTableQuery);
         stmt.execute(builder.toString());
     }
