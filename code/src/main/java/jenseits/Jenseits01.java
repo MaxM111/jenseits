@@ -665,7 +665,14 @@ public class Jenseits01 {
                     logger.logPartial("Vertical Functions", String.valueOf(tupleCount),
                             String.valueOf(attributeCount),
                             String.valueOf(sparsity));
-                    verticalBenchmarkOpt(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds, true);
+                    verticalBenchmarkOpt(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds, true, false,
+                            false);
+                    IO.println(" Vertical Functions (with Hash Index on key): ");
+                    verticalBenchmarkOpt(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds, true, true,
+                            false);
+                    IO.println(" Vertical Functions (with batch statements): ");
+                    verticalBenchmarkOpt(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds, true, false,
+                            true);
                     logger.flush();
                 }
             }
@@ -761,7 +768,8 @@ public class Jenseits01 {
      * Benchmarks the vertical tables using optimizations
      */
     private static void verticalBenchmarkOpt(Connection conn, Statement stmt, int tupleCount, double sparsity,
-            int attributeCount, int unitInSeconds, boolean useFunctions) throws Exception {
+            int attributeCount, int unitInSeconds, boolean useFunctions, boolean useHashIndex, boolean useBatch)
+            throws Exception {
         stmt.execute("DROP TABLE IF EXISTS generated CASCADE");
         var tableData = generate(conn, tupleCount, sparsity, attributeCount);
         H2V(conn, "generated"); // transform into vertical representation
@@ -777,11 +785,8 @@ public class Jenseits01 {
         IO.println("    Size: " + tableSize + " Bytes");
         logger.logPartial(String.valueOf(tableSize));
 
-        if (useFunctions) {
-            benchmarkTableOpt(conn, stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount, true);
-        } else {
-            benchmarkTableOpt(conn, stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount, false);
-        }
+        benchmarkTableOpt(conn, stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount,
+                useFunctions, useHashIndex, useBatch);
     }
 
     private static void createIndex(Connection conn, String table) throws Exception {
@@ -791,17 +796,40 @@ public class Jenseits01 {
     }
 
     // Phase 3 (somewhat Phase 2 as well):
+    //
+    // Further Optimisations:
+    // - PreparedStatement
+    // - Hash index on `key` of vertical partitions
+    // - Batch statements
+    //
+    // After testing and comparing we see improvements for:
+    //
+    // - Query2 shows much faster speed (2-4x) when using the index, query1 is not
+    // really affected
+    // This makes sense, as we use `key` in our search condition
+    //
+    // - Query2 is ~2.3 times faster using batch, query1 once again does not seem
+    // to improve much. This might be because query1 is a lot less complex than
+    // query2
 
     /*
      * Benchmarks a table using Optimizations
      */
     private static void benchmarkTableOpt(Connection conn, Statement stmt, String table, TableData tableData,
-            int unitInSeconds,
-            int tupleCount, double sparsity, int attributeCount, boolean useDBMSFunction) throws Exception {
+            int unitInSeconds, int tupleCount, double sparsity, int attributeCount, boolean useDBMSFunction,
+            boolean useHashIndex, boolean useBatch) throws Exception {
         var rand = new Random();
         var attributes = tableData.attributes;
         var intValues = tableData.intValues;
         var varcharValues = tableData.varcharValues;
+
+        if (useHashIndex) {
+            stmt.execute("CREATE INDEX key_idx_str ON vertical_str_generated USING HASH (key)");
+            stmt.execute("CREATE INDEX key_idx_int ON vertical_int_generated USING HASH (key)");
+        } else {
+            stmt.execute("DROP INDEX IF EXISTS key_idx_str");
+            stmt.execute("DROP INDEX IF EXISTS key_idx_int");
+        }
 
         int queryCount1 = 0;
         long start = System.currentTimeMillis();
@@ -811,7 +839,15 @@ public class Jenseits01 {
         while (System.currentTimeMillis() - start < unitInSeconds * 1_000) {
             queryCount1++;
             prepStmt1.setInt(1, rand.nextInt(1, tupleCount + 1));
-            prepStmt1.execute();
+
+            if (useBatch) {
+                prepStmt1.addBatch();
+                if (queryCount1 % 100 == 0) {
+                    prepStmt1.executeBatch();
+                }
+            } else {
+                prepStmt1.execute();
+            }
         }
 
         int queryCount2 = 0;
