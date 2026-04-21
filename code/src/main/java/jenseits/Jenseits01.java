@@ -848,9 +848,18 @@ public class Jenseits01 {
                 "CREATE FUNCTION q_i (par_oid INTEGER) RETURNS TABLE(oid INTEGER");
         var attributes = tableData.attributes;
         for (var attribute : attributes) {
-            qb.append(", ");
-            qb.append(attribute.name);
-            qb.append(String.format(" %s", attribute.type.sqlType()));
+            if (attribute.type == attribute.type.String) {
+                qb.append(", ");
+                qb.append(attribute.name);
+                qb.append(String.format(" %s", attribute.type.sqlType()));
+            }
+        }
+        for (var attribute : attributes) {
+            if (attribute.type == attribute.type.Integer) {
+                qb.append(", ");
+                qb.append(attribute.name);
+                qb.append(String.format(" %s", attribute.type.sqlType()));
+            }
         }
         qb.append(") LANGUAGE SQL STABLE AS $$ ");
         qb.append("SELECT * FROM " + subquery1 + " JOIN " + subquery2);
