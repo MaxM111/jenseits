@@ -845,7 +845,7 @@ public class Jenseits01 {
 
         stmt.execute("DROP FUNCTION IF EXISTS q_i(INTEGER);");
         StringBuilder qb = new StringBuilder(
-                "CREATE OR REPLACE FUNCTION q_i (par_oid INTEGER) RETURNS TABLE(oid INTEGER");
+                "CREATE FUNCTION q_i (par_oid INTEGER) RETURNS TABLE(oid INTEGER");
         var attributes = tableData.attributes;
         for (var attribute : attributes) {
             qb.append(", ");
