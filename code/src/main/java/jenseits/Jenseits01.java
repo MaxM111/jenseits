@@ -813,7 +813,7 @@ public class Jenseits01 {
         int queryCount2 = 0;
         start = System.currentTimeMillis();
         String query2;
-        query2 = useDBMSFunction ? String.format("SELECT * FROM q_ii(?, ?)")
+        query2 = useDBMSFunction ? "SELECT * FROM q_ii(?, ?)"
                 : String.format(
                         "SELECT oid FROM %s WHERE ? = ?",
                         table);
