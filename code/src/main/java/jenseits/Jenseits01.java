@@ -644,22 +644,24 @@ public class Jenseits01 {
                     IO.println("#Tuples: " + tupleCount);
                     IO.println("#Attributes: " + attributeCount);
                     IO.println("Sparsity: " + sparsity);
-                    IO.println("----------------------");
-                    IO.println("  Horizontal: ");
-
-                    logger.logPartial("Horizontal", String.valueOf(tupleCount),
-                            String.valueOf(attributeCount),
-                            String.valueOf(sparsity));
-                    horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
-                            unitInSeconds);
-                    IO.println("  Vertical: ");
-                    logger.logPartial("Vertical", String.valueOf(tupleCount),
-                            String.valueOf(attributeCount),
-                            String.valueOf(sparsity));
-
-                    verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
-                            unitInSeconds);
-
+                    /*
+                     * IO.println("----------------------");
+                     * IO.println("  Horizontal: ");
+                     * 
+                     * logger.logPartial("Horizontal", String.valueOf(tupleCount),
+                     * String.valueOf(attributeCount),
+                     * String.valueOf(sparsity));
+                     * horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
+                     * unitInSeconds);
+                     * IO.println("  Vertical: ");
+                     * logger.logPartial("Vertical", String.valueOf(tupleCount),
+                     * String.valueOf(attributeCount),
+                     * String.valueOf(sparsity));
+                     * 
+                     * verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
+                     * unitInSeconds);
+                     * 
+                     */
                     IO.println("  Vertical Optimized: ");
                     logger.logPartial("Vertical Optimized", String.valueOf(tupleCount),
                             String.valueOf(attributeCount),
@@ -768,7 +770,7 @@ public class Jenseits01 {
         String table = "h_view_vertical_generated"; // as defined in V2H()
         createIndex(conn, "vertical_str_generated");
         createIndex(conn, "vertical_int_generated");
-        createDBMSFunction(conn, table, tableData);
+        createDBMSFunction_q_i(conn, table, tableData);
 
         long tableSize = tableSize(conn, "vertical_str_generated") + tableSize(conn, "vertical_int_generated")
                 + tableSize(conn, "primary_keys_generated");
@@ -833,7 +835,7 @@ public class Jenseits01 {
         logger.log(String.valueOf(queryCount1), String.valueOf(queryCount2), String.valueOf(unitInSeconds));
     }
 
-    private static void createDBMSFunction(Connection conn, String table, TableData tableData) throws Exception {
+    private static void createDBMSFunction_q_i(Connection conn, String table, TableData tableData) throws Exception {
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_generated";
         String verticalIntName = "vertical_int_generated";
@@ -848,6 +850,7 @@ public class Jenseits01 {
                 """, horizontalRelation, verticalIntName, verticalStrName);
         stmt.execute(query1);
 
+        stmt.execute("DROP FUNCTION q_i(INTEGER);");
         StringBuilder qb = new StringBuilder(
                 "CREATE OR REPLACE FUNCTION q_i (par_oid INTEGER) RETURNS TABLE(oid INTEGER");
         var attributes = tableData.attributes;
@@ -880,4 +883,10 @@ public class Jenseits01 {
         stmt.execute(qb.toString());
     }
 
+    private static void createDBMSFunction_q_ii(Connection conn, String table, TableData tableData) throws Exception {
+        Statement stmt = conn.createStatement();
+        String verticalStrName = "vertical_str_generated";
+        String verticalIntName = "vertical_int_generated";
+        String horizontalRelation = "generated";
+    }
 }
