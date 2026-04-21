@@ -901,6 +901,25 @@ public class Jenseits01 {
         return qb.toString();
     }
 
+    private static String buildSubqueryHorizontalFromVerticalPartition2(TableData tableData, String tableName,
+            AttributeType type) {
+        var attributes = tableData.attributes;
+        StringBuilder qb = new StringBuilder();
+        qb.append("(SELECT v.oid as oid");
+        for (var attribute : attributes) {
+            if (attribute.type == type) {
+                qb.append(String.format(", %s.val as %s ", attribute.name, attribute.name));
+            }
+        }
+        qb.append(String.format("FROM ((SELECT DISTINCT oid from %s) AS v\n",
+                tableName));
+        qb.append(String.format(
+                " LEFT OUTER JOIN %s AS param_a_i ON (v.oid = param_a_i.oid AND param_a_i.key = param_a_i AND v0.val = param_value )\n",
+                tableName));
+        qb.append(") ORDER BY oid)");
+        return qb.toString();
+    }
+
     private static void createDBMSFunction_q_ii(Connection conn, String table, TableData tableData) throws Exception {
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_generated";
