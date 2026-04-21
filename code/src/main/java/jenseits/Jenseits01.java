@@ -932,6 +932,54 @@ public class Jenseits01 {
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_generated";
         String verticalIntName = "vertical_int_generated";
-        String horizontalRelation = "generated";
+        var attributes = tableData.attributes;
+
+        // query 1
+        stmt.execute("DROP FUNCTION IF EXISTS q_ii(VARCHAR(100), INTEGER)");
+
+        String resultRowIntQuery = buildSubqueryHorizontalFromVerticalPartition2(tableData, verticalStrName,
+                AttributeType.Integer);
+        String stringTableQuery = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalStrName,
+                AttributeType.String, "");
+
+        StringBuilder qb = new StringBuilder(
+                "CREATE FUNCTION q_ii(param_a_i VARCHAR(100), param_value INTEGER) RETURNS TABLE(oid INTEGER");
+        appendFunctionDefinition(qb, attributes, stringTableQuery, resultRowIntQuery);
+        stmt.execute(qb.toString());
+
+        // query 2
+        stmt.execute("DROP FUNCTION IF EXISTS q_ii(param_a_i VARCHAR(100), param_value VARCHAR(100))");
+
+        String intTableQuery = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalIntName,
+                AttributeType.Integer, "");
+        String resultRowStrQuery = buildSubqueryHorizontalFromVerticalPartition2(tableData, verticalIntName,
+                AttributeType.String);
+
+        StringBuilder builder = new StringBuilder(
+                "CREATE FUNCTION q_ii(param_a_i VARCHAR(100), param_value VARCHAR(100)) RETURNS TABLE(oid INTEGER");
+        appendFunctionDefinition(builder, attributes, resultRowStrQuery, intTableQuery);
+        stmt.execute(builder.toString());
+    }
+
+    private static void appendFunctionDefinition(StringBuilder builder, Attribute[] attributes, String subqueryStr,
+            String subqueryInt) {
+        for (var attribute : attributes) {
+            if (attribute.type == AttributeType.String) {
+                builder.append(", ");
+                builder.append(attribute.name);
+                builder.append(String.format(" %s", attribute.type.sqlType()));
+            }
+        }
+        for (var attribute : attributes) {
+            if (attribute.type == AttributeType.Integer) {
+                builder.append(", ");
+                builder.append(attribute.name);
+                builder.append(String.format(" %s", attribute.type.sqlType()));
+            }
+        }
+        builder.append(") LANGUAGE SQL STABLE AS $$ ");
+        builder.append("SELECT * FROM " + subqueryStr + " JOIN " + subqueryInt);
+        builder.append(" USING (oid)");
+        builder.append(" $$");
     }
 }
