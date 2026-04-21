@@ -875,7 +875,16 @@ public class Jenseits01 {
         qb.append("(SELECT v.oid as oid");
         int i = 0;
         for (var attribute : attributes) {
-            qb.append(String.format(", v%d.val as %s ", i, attribute.name));
+            if (attribute.type == AttributeType.String) {
+
+                qb.append(String.format(", v%d.val as %s ", i, attribute.name));
+            }
+            i++;
+        }
+        for (var attribute : attributes) {
+            if (attribute.type == AttributeType.Integer) {
+                qb.append(String.format(", v%d.val as %s ", i, attribute.name));
+            }
             i++;
         }
         qb.append(String.format("FROM ((SELECT DISTINCT oid from %s where oid = par_oid) AS v",
