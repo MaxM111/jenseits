@@ -804,13 +804,17 @@ public class Jenseits01 {
     //
     // After testing and comparing we see improvements for:
     //
-    // - Query2 shows much faster speed (2-4x) when using the index, query1 is not
+    // - Query2 shows much faster speed (2-10x) when using the index, query1 is not
     // really affected
-    // This makes sense, as we use `key` in our search condition
+    // This makes sense, as we use `key` in our search condition for query2 but not
+    // for query1.
     //
     // - Query2 is ~2.3 times faster using batch, query1 once again does not seem
     // to improve much. This might be because query1 is a lot less complex than
     // query2
+    //
+    // - As expected, due to the low batch size, if the query output is already low,
+    // batch statements don't make much of a difference
 
     /*
      * Benchmarks a table using Optimizations
