@@ -850,14 +850,14 @@ public class Jenseits01 {
                 """, horizontalRelation, verticalIntName, verticalStrName);
         stmt.execute(query1);
 
-        stmt.execute("DROP FUNCTION q_i(INTEGER);");
+        stmt.execute("DROP FUNCTION IF EXISTS q_i(INTEGER);");
         StringBuilder qb = new StringBuilder(
                 "CREATE OR REPLACE FUNCTION q_i (par_oid INTEGER) RETURNS TABLE(oid INTEGER");
         var attributes = tableData.attributes;
         for (var attribute : attributes) {
             qb.append(", ");
             qb.append(attribute.name);
-            qb.append(" TEXT");
+            qb.append(String.format(" %s", attribute.type.sqlType()));
         }
         qb.append(") LANGUAGE SQL STABLE AS $$ ");
         qb.append("SELECT v.oid as oid");
@@ -866,7 +866,7 @@ public class Jenseits01 {
             qb.append(String.format(", v%d.val as %s ", i, attribute.name));
             i++;
         }
-        qb.append(String.format("FROM ((SELECT DISTINCT oid from vertical_all_%s where oid = par_oid ) AS v",
+        qb.append(String.format("FROM ((SELECT DISTINCT oid from vertical_all_%s where oid = par_oid) AS v",
                 horizontalRelation));
         int j = 0;
         for (var attribute : attributes) {
@@ -880,6 +880,7 @@ public class Jenseits01 {
             j++;
         }
         qb.append(") ORDER BY oid $$;");
+        IO.println(qb.toString());
         stmt.execute(qb.toString());
     }
 
