@@ -840,8 +840,10 @@ public class Jenseits01 {
         String verticalStrName = "vertical_str_generated";
         String verticalIntName = "vertical_int_generated";
 
-        String subquery1 = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalStrName);
-        String subquery2 = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalIntName);
+        String subquery1 = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalStrName,
+                AttributeType.String);
+        String subquery2 = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalIntName,
+                AttributeType.Integer);
 
         stmt.execute("DROP FUNCTION IF EXISTS q_i(INTEGER);");
         StringBuilder qb = new StringBuilder(
@@ -869,44 +871,25 @@ public class Jenseits01 {
         stmt.execute(qb.toString());
     }
 
-    private static String buildSubqueryHorizontalFromVerticalPartition(TableData tableData, String tableName) {
+    private static String buildSubqueryHorizontalFromVerticalPartition(TableData tableData, String tableName,
+            AttributeType type) {
         var attributes = tableData.attributes;
         StringBuilder qb = new StringBuilder();
         qb.append("(SELECT v.oid as oid");
         int i = 0;
         for (var attribute : attributes) {
-            if (attribute.type == AttributeType.String) {
-
+            if (attribute.type == type) {
                 qb.append(String.format(", v%d.val as %s ", i, attribute.name));
             }
             i++;
         }
-        for (var attribute : attributes) {
-            if (attribute.type == AttributeType.Integer) {
-                qb.append(String.format(", v%d.val as %s ", i, attribute.name));
-            }
-            i++;
-        }
-        qb.append(String.format("FROM ((SELECT DISTINCT oid from %s where oid = par_oid) AS v",
+        qb.append(String.format("FROM ((SELECT DISTINCT oid from %s where oid = par_oid) AS v\n",
                 tableName));
         int j = 0;
         for (var attribute : attributes) {
-            if (attribute.type == AttributeType.String) {
+            if (attribute.type == type) {
                 qb.append(String.format(
-                        " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')",
-                        tableName,
-                        j,
-                        j,
-                        j,
-                        attribute.name));
-            }
-            j++;
-        }
-        j = 0;
-        for (var attribute : attributes) {
-            if (attribute.type == AttributeType.Integer) {
-                qb.append(String.format(
-                        " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')",
+                        " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')\n",
                         tableName,
                         j,
                         j,
