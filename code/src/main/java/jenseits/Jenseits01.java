@@ -552,8 +552,6 @@ public class Jenseits01 {
         primaryKeyResults.close();
         if (primaryKey == null) {
             primaryKey = "oid";
-            // throw new RuntimeException("No primary key found for table " +
-            // verticalStrName);
         }
 
         Pair<String, Integer> pair = createHorizontalViewOfPartition(stmt, verticalStrName, numMaxAttributes,
