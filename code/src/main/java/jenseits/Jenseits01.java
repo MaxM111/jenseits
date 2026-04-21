@@ -839,16 +839,9 @@ public class Jenseits01 {
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_generated";
         String verticalIntName = "vertical_int_generated";
-        String horizontalRelation = "generated";
 
-        var query1 = String.format("""
-                CREATE view vertical_all_%s AS
-                SELECT oid, key, val::VARCHAR(10) as val FROM %s
-                UNION
-                SELECT oid,key,val FROM %s
-                ORDER BY oid;
-                """, horizontalRelation, verticalIntName, verticalStrName);
-        stmt.execute(query1);
+        String subquery1 = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalStrName);
+        String subquery2 = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalIntName);
 
         stmt.execute("DROP FUNCTION IF EXISTS q_i(INTEGER);");
         StringBuilder qb = new StringBuilder(
@@ -860,28 +853,37 @@ public class Jenseits01 {
             qb.append(String.format(" %s", attribute.type.sqlType()));
         }
         qb.append(") LANGUAGE SQL STABLE AS $$ ");
-        qb.append("SELECT v.oid as oid");
+        qb.append(subquery1 + " JOIN " + subquery2);
+        qb.append(" USING (oid)");
+        qb.append(" $$;");
+        IO.println(qb.toString());
+        stmt.execute(qb.toString());
+    }
+
+    private static String buildSubqueryHorizontalFromVerticalPartition(TableData tableData, String tableName) {
+        var attributes = tableData.attributes;
+        StringBuilder qb = new StringBuilder();
+        qb.append("(SELECT v.oid as oid");
         int i = 0;
         for (var attribute : attributes) {
             qb.append(String.format(", v%d.val as %s ", i, attribute.name));
             i++;
         }
-        qb.append(String.format("FROM ((SELECT DISTINCT oid from vertical_all_%s where oid = par_oid) AS v",
-                horizontalRelation));
+        qb.append(String.format("FROM ((SELECT DISTINCT oid from %s where oid = par_oid) AS v",
+                tableName));
         int j = 0;
         for (var attribute : attributes) {
             qb.append(String.format(
-                    " LEFT OUTER JOIN vertical_all_%s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')",
-                    horizontalRelation,
+                    " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')",
+                    tableName,
                     j,
                     j,
                     j,
                     attribute.name));
             j++;
         }
-        qb.append(") ORDER BY oid $$;");
-        IO.println(qb.toString());
-        stmt.execute(qb.toString());
+        qb.append(") ORDER BY oid)");
+        return qb.toString();
     }
 
     private static void createDBMSFunction_q_ii(Connection conn, String table, TableData tableData) throws Exception {
