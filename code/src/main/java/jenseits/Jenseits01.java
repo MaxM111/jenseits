@@ -579,7 +579,7 @@ public class Jenseits01 {
      * @return the name of the view and the remaining max. number of attributes
      */
     private static Pair<String, Integer> createHorizontalViewOfPartition(Statement stmt, String verticalStrRelation,
-            int numMaxAttributes, String prim) throws Exception {
+            int numMaxAttributes, String primaryKey) throws Exception {
 
         ResultSet allStrAttributes = stmt
                 .executeQuery(String.format("SELECT DISTINCT key FROM %s", verticalStrRelation));
@@ -590,23 +590,23 @@ public class Jenseits01 {
         }
 
         var sql = new StringBuilder(String.format(
-                "CREATE VIEW view_%s AS SELECT v.%s AS %s", verticalStrRelation, prim, prim));
+                "CREATE VIEW view_%s AS SELECT v.%s AS %s", verticalStrRelation, primaryKey, primaryKey));
         for (int i = 0; i < attributes.size(); i++) {
             sql.append(String.format(", v%d.val AS %s ", i, attributes.get(i)));
         }
-        sql.append(String.format(" FROM ((SELECT DISTINCT %s FROM %s) AS v", prim, verticalStrRelation));
+        sql.append(String.format(" FROM ((SELECT DISTINCT %s FROM %s) AS v", primaryKey, verticalStrRelation));
         for (int i = 0; i < attributes.size(); i++) {
             sql.append(String.format(
                     " LEFT OUTER JOIN %s AS v%d ON (v.%s = v%d.%s AND v%d.key='%s')",
                     verticalStrRelation,
                     i,
-                    prim,
+                    primaryKey,
                     i,
-                    prim,
+                    primaryKey,
                     i,
                     attributes.get(i).toString()));
         }
-        sql.append(String.format(") ORDER BY %s", prim));
+        sql.append(String.format(") ORDER BY %s", primaryKey));
         stmt.execute(sql.toString());
 
         int remainingMaxAttributes = numMaxAttributes - attributes.size(); // guaranteed >= 0
