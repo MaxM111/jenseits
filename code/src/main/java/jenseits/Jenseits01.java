@@ -835,15 +835,19 @@ public class Jenseits01 {
         logger.log(String.valueOf(queryCount1), String.valueOf(queryCount2), String.valueOf(unitInSeconds));
     }
 
+    // Note on SQL procedures: We order the attributes, so that oid is first, then
+    // the strings, then the integers. This makes
+    // the return type consistent.
+
     private static void createDBMSFunction_q_i(Connection conn, String table, TableData tableData) throws Exception {
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_generated";
         String verticalIntName = "vertical_int_generated";
 
-        String subquery1 = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalStrName,
-                AttributeType.String);
-        String subquery2 = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalIntName,
-                AttributeType.Integer);
+        String subqueryStr = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalStrName,
+                AttributeType.String, "WHERE oid = par_oid");
+        String subqueryInt = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalIntName,
+                AttributeType.Integer, "WHERE oid = par_oid");
 
         stmt.execute("DROP FUNCTION IF EXISTS q_i(INTEGER);");
         StringBuilder qb = new StringBuilder(
@@ -864,14 +868,18 @@ public class Jenseits01 {
             }
         }
         qb.append(") LANGUAGE SQL STABLE AS $$ ");
-        qb.append("SELECT * FROM " + subquery1 + " JOIN " + subquery2);
+        qb.append("SELECT * FROM " + subqueryStr + " JOIN " + subqueryInt);
         qb.append(" USING (oid)");
         qb.append(" $$;");
         stmt.execute(qb.toString());
     }
 
+    /*
+     * To ensure consistent attribute order, this method should be called twice:
+     * Once for attributes of type varchar and once for attributes of type integer
+     */
     private static String buildSubqueryHorizontalFromVerticalPartition(TableData tableData, String tableName,
-            AttributeType type) {
+            AttributeType type, String whereClause) {
         var attributes = tableData.attributes;
         StringBuilder qb = new StringBuilder();
         qb.append("(SELECT v.oid as oid");
@@ -882,8 +890,8 @@ public class Jenseits01 {
             }
             i++;
         }
-        qb.append(String.format("FROM ((SELECT DISTINCT oid from %s where oid = par_oid) AS v\n",
-                tableName));
+        qb.append(String.format("FROM ((SELECT DISTINCT oid from %s %s) AS v\n",
+                tableName, whereClause));
         int j = 0;
         for (var attribute : attributes) {
             if (attribute.type == type) {
