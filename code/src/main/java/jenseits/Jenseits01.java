@@ -847,11 +847,10 @@ public class Jenseits01 {
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_generated";
         String verticalIntName = "vertical_int_generated";
+        String primaryKeyTable = "primary_keys_generated";
 
-        String subqueryStr = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalStrName,
-                AttributeType.String, "WHERE oid = par_oid");
-        String subqueryInt = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalIntName,
-                AttributeType.Integer, "WHERE oid = par_oid");
+        String query = buildSubqueryHorizontalFromVerticalPartition(tableData, primaryKeyTable, verticalStrName,
+                verticalIntName, "WHERE oid = par_oid");
 
         stmt.execute("DROP FUNCTION IF EXISTS q_i(INTEGER);");
         StringBuilder qb = new StringBuilder(
@@ -872,8 +871,7 @@ public class Jenseits01 {
             }
         }
         qb.append(") LANGUAGE SQL STABLE AS $$ ");
-        qb.append("SELECT * FROM " + subqueryStr + " JOIN " + subqueryInt);
-        qb.append(" USING (oid)");
+        qb.append("SELECT * FROM " + query);
         qb.append(" $$;");
         stmt.execute(qb.toString());
     }
@@ -882,26 +880,37 @@ public class Jenseits01 {
      * To ensure consistent attribute order, this method should be called twice:
      * Once for attributes of type varchar and once for attributes of type integer
      */
-    private static String buildSubqueryHorizontalFromVerticalPartition(TableData tableData, String tableName,
-            AttributeType type, String whereClause) {
+    private static String buildSubqueryHorizontalFromVerticalPartition(TableData tableData, String primaryKeyTable,
+            String verticalStrName, String verticalIntName, String whereClause) {
         var attributes = tableData.attributes;
         StringBuilder qb = new StringBuilder();
         qb.append("(SELECT v.oid as oid");
+
         int i = 0;
         for (var attribute : attributes) {
-            if (attribute.type == type) {
+            if (attribute.type == AttributeType.String) {
                 qb.append(String.format(", v%d.val as %s ", i, attribute.name));
             }
             i++;
         }
+
+        i = 0;
+        for (var attribute : attributes) {
+            if (attribute.type == AttributeType.Integer) {
+                qb.append(String.format(", v%d.val as %s ", i, attribute.name));
+            }
+            i++;
+        }
+
         qb.append(String.format("FROM ((SELECT DISTINCT oid from %s %s) AS v\n",
-                tableName, whereClause));
+                primaryKeyTable, whereClause));
+
         int j = 0;
         for (var attribute : attributes) {
-            if (attribute.type == type) {
+            if (attribute.type == AttributeType.String) {
                 qb.append(String.format(
                         " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key = '%s')\n",
-                        tableName,
+                        verticalStrName,
                         j,
                         j,
                         j,
@@ -909,6 +918,21 @@ public class Jenseits01 {
             }
             j++;
         }
+
+        j = 0;
+        for (var attribute : attributes) {
+            if (attribute.type == AttributeType.Integer) {
+                qb.append(String.format(
+                        " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key = '%s')\n",
+                        verticalIntName,
+                        j,
+                        j,
+                        j,
+                        attribute.name));
+            }
+            j++;
+        }
+
         qb.append(") ORDER BY oid)");
         return qb.toString();
     }
