@@ -630,7 +630,7 @@ public class Jenseits01 {
                 1.0 - (1.0 / 16.0) };
 
         var stmt = conn.createStatement();
-        int unitInSeconds = 10; // unit in which we count the number of queries
+        int unitInSeconds = 7; // unit in which we count the number of queries
 
         logger.log("representation", "tupleCount", "attributeCount", "sparsity", "tableSize", "queryCount1",
                 "queryCount2", "duration");
@@ -643,25 +643,26 @@ public class Jenseits01 {
                     IO.println("#Attributes: " + attributeCount);
                     IO.println("Sparsity: " + sparsity);
                     IO.println("----------------------");
-                    IO.println("  Horizontal: ");
-                    logger.logPartial("Horizontal", String.valueOf(tupleCount),
-                            String.valueOf(attributeCount),
-                            String.valueOf(sparsity));
-                    horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
-                            unitInSeconds);
-                    IO.println("  Vertical: ");
-                    logger.logPartial("Vertical", String.valueOf(tupleCount),
-                            String.valueOf(attributeCount),
-                            String.valueOf(sparsity));
-
-                    verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
-                            unitInSeconds);
-                    IO.println("  Vertical Optimized: ");
-                    logger.logPartial("Vertical Optimized", String.valueOf(tupleCount),
-                            String.valueOf(attributeCount),
-                            String.valueOf(sparsity));
-                    verticalBenchmarkOpt(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds, false);
-                    IO.println("  Vertical Functions: ");
+                    // IO.println(" Horizontal: ");
+                    // logger.logPartial("Horizontal", String.valueOf(tupleCount),
+                    // String.valueOf(attributeCount),
+                    // String.valueOf(sparsity));
+                    // horizontalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
+                    // unitInSeconds);
+                    // IO.println(" Vertical: ");
+                    // logger.logPartial("Vertical", String.valueOf(tupleCount),
+                    // String.valueOf(attributeCount),
+                    // String.valueOf(sparsity));
+                    //
+                    // verticalBenchmark(conn, stmt, tupleCount, sparsity, attributeCount,
+                    // unitInSeconds);
+                    // IO.println(" Vertical Optimized: ");
+                    // logger.logPartial("Vertical Optimized", String.valueOf(tupleCount),
+                    // String.valueOf(attributeCount),
+                    // String.valueOf(sparsity));
+                    // verticalBenchmarkOpt(conn, stmt, tupleCount, sparsity, attributeCount,
+                    // unitInSeconds, false, false, false);
+                    IO.println(" Vertical Functions: ");
                     logger.logPartial("Vertical Functions", String.valueOf(tupleCount),
                             String.valueOf(attributeCount),
                             String.valueOf(sparsity));
@@ -796,6 +797,14 @@ public class Jenseits01 {
     }
 
     // Phase 3 (somewhat Phase 2 as well):
+    //
+    // Phase 2 Approach vs Phase 3 Approach
+    //
+    // Functions prove to be much more efficient due to the DBMS being able to
+    // optimise a lot more of the operations away
+    //
+    // Functions prove to be much more efficient due to the DBMS being able to
+    // optimise a lot more of the operations away.
     //
     // Further Optimisations:
     // - PreparedStatement
