@@ -58,21 +58,21 @@ public class Jenseits01 {
 
         var valuesSql = "INSERT INTO demotable (name, age) VALUES (?, ?)";
         var prepStmt = conn.prepareStatement(valuesSql);
-        prepStmt.setString(1, "Sam Crawford");
+        prepStmt.setString(1, "Sam");
         prepStmt.setInt(2, 21);
         prepStmt.execute();
-        prepStmt.setString(1, "Max Moderegger");
+        prepStmt.setString(1, "Max");
         prepStmt.setInt(2, 32);
         prepStmt.execute();
 
         var querySamAge = """
                 SELECT age
                 FROM demotable
-                WHERE demotable.name = 'Sam Crawford'
+                WHERE demotable.name = 'Sam'
                 """; // remember: use single quotes for postgresql
         ResultSet results = conn.createStatement().executeQuery(querySamAge);
         if (results.next()) {
-            IO.println("Age of Sam Crawford: " + results.getInt("age"));
+            IO.println("Age of Sam : " + results.getInt("age"));
         }
     }
 
@@ -948,7 +948,7 @@ public class Jenseits01 {
 
         StringBuilder qb = new StringBuilder(
                 "CREATE FUNCTION q_ii(param_a_i VARCHAR(10), param_value INTEGER) RETURNS TABLE(oid INTEGER");
-        appendFunctionDefinition(qb, attributes, stringTableQuery, resultRowIntQuery);
+        appendFunctionDefinition(qb, attributes, stringTableQuery, resultRowIntQuery, AttributeType.Integer);
         IO.println(qb.toString());
         stmt.execute(qb.toString());
 
@@ -962,12 +962,12 @@ public class Jenseits01 {
 
         StringBuilder builder = new StringBuilder(
                 "CREATE FUNCTION q_ii(param_a_i VARCHAR(10), param_value VARCHAR(100)) RETURNS TABLE(oid INTEGER");
-        appendFunctionDefinition(builder, attributes, resultRowStrQuery, intTableQuery);
+        appendFunctionDefinition(builder, attributes, resultRowStrQuery, intTableQuery, AttributeType.String);
         stmt.execute(builder.toString());
     }
 
     private static void appendFunctionDefinition(StringBuilder builder, Attribute[] attributes, String subqueryStr,
-            String subqueryInt) {
+            String subqueryInt, AttributeType type) {
         for (var attribute : attributes) {
             if (attribute.type == AttributeType.String) {
                 builder.append(", ");
@@ -982,9 +982,20 @@ public class Jenseits01 {
                 builder.append(String.format(" %s", attribute.type.sqlType()));
             }
         }
+
         builder.append(") LANGUAGE SQL STABLE AS $$ ");
-        builder.append("SELECT * FROM " + subqueryStr + " JOIN " + subqueryInt);
-        builder.append(" USING (oid)");
-        builder.append(" $$");
+        builder.append("SELECT * FROM (" + subqueryStr + " JOIN " + subqueryInt);
+        builder.append(" USING (oid)) AS res ");
+        builder.append("""
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM %s t
+                    WHERE t.oid = res.oid
+                      AND t.key = param_a_i
+                      AND t.val::TEXT = param_value::TEXT
+                )
+                """.formatted(
+                type == AttributeType.Integer ? "vertical_int_generated" : "vertical_str_generated"));
+        builder.append(" $$;");
     }
 }
