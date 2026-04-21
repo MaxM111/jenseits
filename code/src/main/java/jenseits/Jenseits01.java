@@ -882,13 +882,28 @@ public class Jenseits01 {
                 tableName));
         int j = 0;
         for (var attribute : attributes) {
-            qb.append(String.format(
-                    " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')",
-                    tableName,
-                    j,
-                    j,
-                    j,
-                    attribute.name));
+            if (attribute.type == AttributeType.String) {
+                qb.append(String.format(
+                        " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')",
+                        tableName,
+                        j,
+                        j,
+                        j,
+                        attribute.name));
+            }
+            j++;
+        }
+        j = 0;
+        for (var attribute : attributes) {
+            if (attribute.type == AttributeType.Integer) {
+                qb.append(String.format(
+                        " LEFT OUTER JOIN %s AS v%d ON (v.oid = v%d.oid AND v%d.key='%s')",
+                        tableName,
+                        j,
+                        j,
+                        j,
+                        attribute.name));
+            }
             j++;
         }
         qb.append(") ORDER BY oid)");
