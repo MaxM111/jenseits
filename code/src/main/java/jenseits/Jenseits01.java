@@ -942,7 +942,7 @@ public class Jenseits01 {
         // function 1
         stmt.execute("DROP FUNCTION IF EXISTS q_ii(VARCHAR(100), INTEGER)");
 
-        String resultRowIntQuery = buildSubqueryHorizontalFromVerticalPartition2(tableData, verticalStrName,
+        String resultRowIntQuery = buildSubqueryHorizontalFromVerticalPartition2(tableData, verticalIntName,
                 AttributeType.Integer);
         String stringTableQuery = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalStrName,
                 AttributeType.String, "");
@@ -950,6 +950,7 @@ public class Jenseits01 {
         StringBuilder qb = new StringBuilder(
                 "CREATE FUNCTION q_ii(param_a_i VARCHAR(100), param_value INTEGER) RETURNS TABLE(oid INTEGER");
         appendFunctionDefinition(qb, attributes, stringTableQuery, resultRowIntQuery);
+        IO.println(qb.toString());
         stmt.execute(qb.toString());
 
         // function 2
@@ -957,7 +958,7 @@ public class Jenseits01 {
 
         String intTableQuery = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalIntName,
                 AttributeType.Integer, "");
-        String resultRowStrQuery = buildSubqueryHorizontalFromVerticalPartition2(tableData, verticalIntName,
+        String resultRowStrQuery = buildSubqueryHorizontalFromVerticalPartition2(tableData, verticalStrName,
                 AttributeType.String);
 
         StringBuilder builder = new StringBuilder(
