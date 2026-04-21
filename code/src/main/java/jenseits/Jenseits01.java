@@ -681,8 +681,6 @@ public class Jenseits01 {
         logger.logPartial(String.valueOf(tableSize));
         IO.println("    Size: " + tableSize + " Bytes");
 
-        // benchmarkTable(stmt, table, tableData, unitInSeconds, tupleCount, sparsity,
-        // attributeCount);
         benchmarkTable(stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount);
     }
 
@@ -759,56 +757,6 @@ public class Jenseits01 {
     }
 
     /*
-     * Creates an specialized view view in database to view vertical tables as
-     * horizontal tables for optimized bnechmarks.
-     */
-    static void V2Hspec(Connection conn, String horizontalRelation, int numMaxAttributes)
-            throws Exception {
-
-        Statement stmt = conn.createStatement();
-        String verticalStrName = "vertical_str_" + horizontalRelation;
-        String verticalIntName = "vertical_int_" + horizontalRelation;
-
-        DatabaseMetaData meta = conn.getMetaData();
-        ResultSet primaryKeyResults = meta.getPrimaryKeys(null, null, verticalStrName);
-        String primaryKey = null;
-        if (primaryKeyResults.next()) {
-            primaryKey = primaryKeyResults.getString("COLUMN_NAME");
-        }
-        primaryKeyResults.close();
-        if (primaryKey == null) {
-            primaryKey = "oid";
-            // throw new RuntimeException("No primary key found for table " +
-            // verticalStrName);
-        }
-
-        Pair<String, Integer> pair = createHorizontalViewOfPartition(stmt, verticalStrName, numMaxAttributes,
-                primaryKey);
-        String strViewName = pair.getFirst();
-        int remainingMaxAttributes = pair.getSecond();
-        Pair<String, Integer> pair2 = createHorizontalViewOfPartition(stmt, verticalIntName, remainingMaxAttributes,
-                primaryKey);
-        String intViewName = pair2.getFirst();
-
-        List<Attribute> columns = queryAttributes(conn, horizontalRelation);
-
-        stmt.execute(String.format("""
-                CREATE VIEW h_view_vertical_spec_%s AS
-                SELECT *
-                FROM %s AS str
-                FULL OUTER JOIN %s AS int
-                USING (oid)
-                """, horizontalRelation, strViewName, intViewName));
-        for (var column : columns) {
-            stmt.execute(String.format("""
-                    CREATE VIEW h_view_vertical_spec_%s_%s AS
-                    SELECT oid,%s
-                    FROM h_view_vertical_spec_%s;
-                    """, horizontalRelation, column.name, column.name, horizontalRelation));
-        }
-    }
-
-    /*
      * Benchmarks the vertical tables using optimizations
      */
     private static void verticalBenchmarkOpt(Connection conn, Statement stmt, int tupleCount, double sparsity,
@@ -817,9 +765,6 @@ public class Jenseits01 {
         var tableData = generate(conn, tupleCount, sparsity, attributeCount);
         H2V(conn, "generated"); // transform into vertical representation
         V2H(conn, "generated", 20); // create view to access using a horizontal view
-        // V2Hspec(conn, "generated", 20); // create view to access using a horizontal
-        // view
-        // String table = "h_view_vertical_spec_generated"; // as defined in V2H()
         String table = "h_view_vertical_generated"; // as defined in V2H()
         createIndex(conn, "vertical_str_generated");
         createIndex(conn, "vertical_int_generated");
@@ -883,23 +828,6 @@ public class Jenseits01 {
                 prepStmt2.setString(2, varcharValues.get(rand.nextInt(varcharValues.size())));
             }
             prepStmt2.execute();
-
-            /*
-             * if (attributes[attributeNum - 1].type == AttributeType.Integer) {
-             * query2 = String.format(
-             * "SELECT oid FROM %s",
-             * table + "_a" + attributeNum,
-             * attributeNum,
-             * intValues.get(rand.nextInt(intValues.size())));
-             * } else {
-             * query2 = String.format(
-             * "SELECT oid FROM %s",
-             * table + "_a" + attributeNum,
-             * attributeNum,
-             * varcharValues.get(rand.nextInt(varcharValues.size())));
-             * }
-             * stmt.execute(query2);
-             */
         }
         IO.println("    Result: " + queryCount1 + " query1, " + queryCount2 + " query2 in " + unitInSeconds + "s");
         logger.log(String.valueOf(queryCount1), String.valueOf(queryCount2), String.valueOf(unitInSeconds));
