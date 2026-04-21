@@ -930,13 +930,16 @@ public class Jenseits01 {
         return qb.toString();
     }
 
+    /*
+     * We overload the function to work with both string and integer parameters.
+     */
     private static void createDBMSFunction_q_ii(Connection conn, String table, TableData tableData) throws Exception {
         Statement stmt = conn.createStatement();
         String verticalStrName = "vertical_str_generated";
         String verticalIntName = "vertical_int_generated";
         var attributes = tableData.attributes;
 
-        // query 1
+        // function 1
         stmt.execute("DROP FUNCTION IF EXISTS q_ii(VARCHAR(100), INTEGER)");
 
         String resultRowIntQuery = buildSubqueryHorizontalFromVerticalPartition2(tableData, verticalStrName,
@@ -949,7 +952,7 @@ public class Jenseits01 {
         appendFunctionDefinition(qb, attributes, stringTableQuery, resultRowIntQuery);
         stmt.execute(qb.toString());
 
-        // query 2
+        // function 2
         stmt.execute("DROP FUNCTION IF EXISTS q_ii(param_a_i VARCHAR(100), param_value VARCHAR(100))");
 
         String intTableQuery = buildSubqueryHorizontalFromVerticalPartition(tableData, verticalIntName,
