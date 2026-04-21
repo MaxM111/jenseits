@@ -694,7 +694,8 @@ public class Jenseits01 {
         V2H(conn, "generated", 20); // create view to access using a horizontal view
         String table = "h_view_vertical_generated"; // as defined in V2H()
 
-        long tableSize = tableSize(conn, "vertical_str_generated") + tableSize(conn, "vertical_int_generated");
+        long tableSize = tableSize(conn, "vertical_str_generated") + tableSize(conn, "vertical_int_generated")
+                + tableSize(conn, "primary_keys_generated");
         logger.logPartial(String.valueOf(tableSize));
         IO.println("    Size: " + tableSize + " Bytes");
         benchmarkTable(stmt, table, tableData, unitInSeconds, tupleCount, sparsity, attributeCount);
@@ -824,7 +825,8 @@ public class Jenseits01 {
         createIndex(conn, "vertical_int_generated");
         createDBMSFunction(conn, table, tableData);
 
-        long tableSize = tableSize(conn, "vertical_str_generated") + tableSize(conn, "vertical_int_generated");
+        long tableSize = tableSize(conn, "vertical_str_generated") + tableSize(conn, "vertical_int_generated")
+                + tableSize(conn, "primary_keys_generated");
         IO.println("    Size: " + tableSize + " Bytes");
         logger.logPartial(String.valueOf(tableSize));
 
