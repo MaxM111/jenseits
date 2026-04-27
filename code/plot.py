@@ -162,6 +162,7 @@ plot_queries_2(d, "sparsity", "Queries vs Sparsity")
 
 # Size
 # NOTE: Consider dropping this, it is not very interesting ("hoho, bigger table leads to more size")
-plot_size(d, "tupleCount", "Size vs Tuple Count")
-plot_size(d, "attributeCount", "Size vs Attribute Count")
-plot_size(d, "sparsity", "Size vs Sparsity")
+plot_size_1(d, "tupleCount", "Size vs Tuple Count")
+plot_size_1(d, "attributeCount", "Size vs Attribute Count")
+plot_size_1(d, "sparsity", "Size vs Sparsity")
+
