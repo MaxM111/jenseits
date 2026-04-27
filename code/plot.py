@@ -6,28 +6,28 @@ Comparison:
         - Tuple Count
         - Attribute Count
         - Sparsity
-    once for queries/s,
+    once for queries,
     once for size
 
     Vertical Function vs Vertical Functions Hash Index vs Vertical Functions Batch
         - Tuple Count
         - Attribute Count
         - Sparsity
-    once for queries/s,
+    once for queries,
     once for size
 
     Vertical Optimized vs Best Vertical Function
         - Tuple Count
         - Attribute Count
         - Sparsity
-    once for queries/s,
+    once for queries,
     once for size
 
     Best Vertical vs Horizontal
         - Tuple Count
         - Attribute Count
         - Sparsity
-    once for queries/s,
+    once for queries,
     once for size
 """
 
