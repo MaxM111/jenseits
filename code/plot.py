@@ -168,7 +168,6 @@ def plot_size_1(df, x, title):
 
 d = df[df["representation"].isin(["Vertical", "Vertical Optimized"])]
 
-"""
 # Queries
 plot_queries_1(d, "tupleCount", "Queries vs Tuple Count")
 plot_queries_1(d, "attributeCount", "Queries vs Attribute Count")
@@ -179,7 +178,6 @@ plot_queries_1(d, "sparsity", "Queries vs Sparsity")
 plot_size_1(d, "tupleCount", "Size vs Tuple Count")
 plot_size_1(d, "attributeCount", "Size vs Attribute Count")
 plot_size_1(d, "sparsity", "Size vs Sparsity")
-"""
 
 
 def plot_queries_2(df, x, title):
