@@ -67,7 +67,7 @@ df = pd.read_csv("logs/log.csv")
 partitions = partition_representation(df)
 
 
-def plot_queries_2(df, x, title):
+def plot_queries_1(df, x, title):
     plt.figure(figsize=(6, 4))
 
     # reshape to long format
@@ -156,9 +156,9 @@ def plot_size_1(df, x, title):
 d = df[df["representation"].isin(["Vertical", "Vertical Optimized"])]
 
 # Queries
-plot_queries_2(d, "tupleCount", "Queries vs Tuple Count")
-plot_queries_2(d, "attributeCount", "Queries vs Attribute Count")
-plot_queries_2(d, "sparsity", "Queries vs Sparsity")
+plot_queries_1(d, "tupleCount", "Queries vs Tuple Count")
+plot_queries_1(d, "attributeCount", "Queries vs Attribute Count")
+plot_queries_1(d, "sparsity", "Queries vs Sparsity")
 
 # Size
 # NOTE: Consider dropping this, it is not very interesting ("hoho, bigger table leads to more size")
