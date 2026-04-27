@@ -669,9 +669,15 @@ public class Jenseits01 {
                     verticalBenchmarkOpt(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds, true, false,
                             false);
                     IO.println(" Vertical Functions (with Hash Index on key): ");
+                    logger.logPartial("Vertical Functions (Hash Index)", String.valueOf(tupleCount),
+                            String.valueOf(attributeCount),
+                            String.valueOf(sparsity));
                     verticalBenchmarkOpt(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds, true, true,
                             false);
                     IO.println(" Vertical Functions (with batch statements): ");
+                    logger.logPartial("Vertical Functions (Batch)", String.valueOf(tupleCount),
+                            String.valueOf(attributeCount),
+                            String.valueOf(sparsity));
                     verticalBenchmarkOpt(conn, stmt, tupleCount, sparsity, attributeCount, unitInSeconds, true, false,
                             true);
                     logger.flush();
