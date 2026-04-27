@@ -34,8 +34,9 @@ Comparison:
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
-sns.set(style="whitegrid")
+sns.set_theme(style="whitegrid")
 
 
 def partition_representation(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
@@ -53,6 +54,12 @@ def partition_representation(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
         representation: df[df["representation"] == representation]
         for representation in representations
     }
+
+
+palette = {
+    "Vertical": "#1f77b4",  # blue
+    "Vertical Optimized": "#ff7f0e",  # orange
+}
 
 
 df = pd.read_csv("logs/log.csv")
@@ -79,7 +86,7 @@ def plot_queries(df, x, title):
         }
     )
 
-    sns.lineplot(
+    ax = sns.lineplot(
         data=df_long,
         x=x,
         y="count",
@@ -88,7 +95,22 @@ def plot_queries(df, x, title):
         markers=True,
         dashes=True,
         errorbar=None,
+        legend=None,  # type: ignore
     )
+
+    legend_elements = [
+        Line2D([0], [0], color=palette["Vertical"], lw=2, label="Vertical"),
+        Line2D(
+            [0],
+            [0],
+            color=palette["Vertical Optimized"],
+            lw=2,
+            label="Vertical Optimized",
+        ),
+        Line2D([0], [0], color="black", linestyle="-", label="Query 1"),
+        Line2D([0], [0], color="black", linestyle="--", label="Query 2"),
+    ]
+    ax.legend(handles=legend_elements, title=None)
 
     plt.title(title)
     plt.ylabel("Query Count")
@@ -99,14 +121,29 @@ def plot_queries(df, x, title):
 def plot_size(df, x, title):
     plt.figure(figsize=(6, 4))
 
-    sns.lineplot(
+    ax = sns.lineplot(
         data=df,
         x=x,
         y="tableSize",
         hue="representation",
-        marker=".",
+        palette=palette,
+        marker="o",
         errorbar=None,
+        legend=False,
     )
+
+    legend_elements = [
+        Line2D([0], [0], color=palette["Vertical"], lw=2, label="Vertical"),
+        Line2D(
+            [0],
+            [0],
+            color=palette["Vertical Optimized"],
+            lw=2,
+            label="Vertical Optimized",
+        ),
+    ]
+
+    ax.legend(handles=legend_elements, title=None)
 
     plt.title(title)
     plt.ylabel("Table Size")
@@ -124,7 +161,7 @@ plot_queries(d, "attributeCount", "Queries vs Attribute Count")
 plot_queries(d, "sparsity", "Queries vs Sparsity")
 
 # Size
-# NOTE: Consider dropping this, it is not very interesting ("hoho, bigger table leads to more size" - "duh")
+# NOTE: Consider dropping this, it is not very interesting ("hoho, bigger table leads to more size")
 plot_size(d, "tupleCount", "Size vs Tuple Count")
 plot_size(d, "attributeCount", "Size vs Attribute Count")
 plot_size(d, "sparsity", "Size vs Sparsity")
