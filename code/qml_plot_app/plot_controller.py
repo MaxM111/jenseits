@@ -15,6 +15,16 @@ import seaborn as sns
 from PyQt6.QtCore import QObject, QUrl, pyqtProperty, pyqtSignal, pyqtSlot
 
 
+REPRESENTATION_COLORS = {
+    "Horizontal": "#d31313",
+    "Vertical": "#1f77b4",
+    "Vertical Optimized": "#ff7fae",
+    "Vertical Functions": "#2ca02c",
+    "Vertical Functions (Hash Index)": "#ff7f0e",
+    "Vertical Functions (Batch)": "#8a2b91",
+}
+
+
 class PlotController(QObject):
     plotsChanged = pyqtSignal()
     controlsChanged = pyqtSignal()
@@ -121,6 +131,13 @@ class PlotController(QObject):
             & (self.df["representation"].isin(self.selected_representations))
         ]
 
+    def selected_representation_order(self) -> list[str]:
+        return [
+            representation
+            for representation in self.representation_values
+            if representation in self.selected_representations
+        ]
+
     def update_plots(self) -> None:
         data = self.filtered_data()
         self.version += 1
@@ -163,9 +180,11 @@ class PlotController(QObject):
             x="tupleCount",
             y="queryCount",
             hue="representation",
+            hue_order=self.selected_representation_order(),
             style="query",
             markers=True,
             dashes=True,
+            palette=REPRESENTATION_COLORS,
             errorbar=None,
         )
         ax.set_title(self.title("Query Count vs Tuple Count"))
@@ -182,19 +201,24 @@ class PlotController(QObject):
             self.write_empty_plot(path, "Table Size vs Tuple Count")
             return
 
+        data = data.copy()
+        data["tableSizeMb"] = data["tableSize"] / 1_000_000
+
         fig, ax = plt.subplots(figsize=(7.2, 4.4))
         sns.lineplot(
             ax=ax,
             data=data,
             x="tupleCount",
-            y="tableSize",
+            y="tableSizeMb",
             hue="representation",
+            hue_order=self.selected_representation_order(),
             marker="o",
+            palette=REPRESENTATION_COLORS,
             errorbar=None,
         )
         ax.set_title(self.title("Table Size vs Tuple Count"))
         ax.set_xlabel("Tuple Count")
-        ax.set_ylabel("Table Size (bytes)")
+        ax.set_ylabel("Table Size (MB)")
         ax.set_xticks(sorted(data["tupleCount"].unique().tolist()))
         self.clean_legend(ax)
         fig.tight_layout()
