@@ -34,6 +34,12 @@ XLABELS = {
     "sparsity": "Sparsity",
 }
 
+BASELINE_VALUES = {
+    "tupleCount": 4000,
+    "attributeCount": 10,
+    "sparsity": 0.75,
+}
+
 FIGURES = [
     {
         "filename": "01_vertical_vs_optimized_queries.png",
@@ -78,9 +84,26 @@ def set_common_axis_labels(ax, x: str, y: str) -> None:
     ax.set_ylabel(y)
 
 
+def slice_for_dimension(df: pd.DataFrame, x: str) -> pd.DataFrame:
+    data = df.copy()
+    for dimension, value in BASELINE_VALUES.items():
+        if dimension != x:
+            data = data[data[dimension] == value]
+    return data
+
+
+def fixed_values_label(x: str) -> str:
+    fixed_parts = [
+        f"{XLABELS[dimension]} = {value}"
+        for dimension, value in BASELINE_VALUES.items()
+        if dimension != x
+    ]
+    return "Fixed: " + ", ".join(fixed_parts)
+
+
 def save_current_plot(fig, filename: str) -> None:
     OUTPUT_DIR.mkdir(exist_ok=True)
-    fig.tight_layout(rect=(0, 0, 1, 0.88))
+    fig.tight_layout(rect=(0, 0, 1, 0.84))
     fig.savefig(OUTPUT_DIR / filename, dpi=200)
     plt.close()
 
@@ -93,7 +116,8 @@ def representation_legend(representations: list[str]) -> list[Line2D]:
 
 
 def plot_queries_panel(ax, df: pd.DataFrame, representations: list[str], x: str) -> None:
-    data = df[df["representation"].isin(representations)]
+    data = slice_for_dimension(df, x)
+    data = data[data["representation"].isin(representations)]
     data_long = data.melt(
         id_vars=["representation", x],
         value_vars=["queryCount1", "queryCount2"],
@@ -121,11 +145,12 @@ def plot_queries_panel(ax, df: pd.DataFrame, representations: list[str], x: str)
         legend=None,
     )
     set_common_axis_labels(ax, x, "Query Count")
-    ax.set_title(XLABELS[x])
+    ax.set_title(f"{XLABELS[x]}\n{fixed_values_label(x)}", fontsize=10)
 
 
 def plot_size_panel(ax, df: pd.DataFrame, representations: list[str], x: str) -> None:
-    data = df[df["representation"].isin(representations)]
+    data = slice_for_dimension(df, x)
+    data = data[data["representation"].isin(representations)]
 
     sns.lineplot(
         ax=ax,
@@ -139,7 +164,7 @@ def plot_size_panel(ax, df: pd.DataFrame, representations: list[str], x: str) ->
         legend=None,
     )
     set_common_axis_labels(ax, x, "Table Size (bytes)")
-    ax.set_title(XLABELS[x])
+    ax.set_title(f"{XLABELS[x]}\n{fixed_values_label(x)}", fontsize=10)
 
 
 def plot_figure(df: pd.DataFrame, figure: dict[str, object]) -> None:
@@ -147,7 +172,7 @@ def plot_figure(df: pd.DataFrame, figure: dict[str, object]) -> None:
     if not isinstance(representations, list):
         raise TypeError("representations must be a list")
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.8))
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5.2))
 
     for ax, x in zip(axes, XTICKS):
         if figure["metric"] == "queries":
@@ -164,7 +189,13 @@ def plot_figure(df: pd.DataFrame, figure: dict[str, object]) -> None:
         ]
 
     fig.suptitle(str(figure["title"]), fontsize=16)
-    fig.legend(handles=handles, loc="upper center", ncol=min(len(handles), 5), frameon=False, bbox_to_anchor=(0.5, 0.86))
+    fig.legend(
+        handles=handles,
+        loc="upper center",
+        ncol=min(len(handles), 5),
+        frameon=False,
+        bbox_to_anchor=(0.5, 0.84),
+    )
     save_current_plot(fig, str(figure["filename"]))
 
 
