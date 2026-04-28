@@ -189,12 +189,23 @@ ApplicationWindow {
             }
         }
 
-        GridLayout {
+        TabBar {
+            id: plotTabs
+            Layout.fillWidth: true
+
+            TabButton {
+                text: "Query Count"
+            }
+
+            TabButton {
+                text: "Table Size"
+            }
+        }
+
+        StackLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            columns: 2
-            columnSpacing: 16
-            rowSpacing: 16
+            currentIndex: plotTabs.currentIndex
 
             Rectangle {
                 Layout.fillWidth: true
