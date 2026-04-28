@@ -62,6 +62,7 @@ palette = {
     "Vertical Functions": "#1f77b4",  # blue
     "Vertical Functions (Hash Index)": "#ff7f0e",  # orange
     "Vertical Functions (Batch)": "#8a2b91",  # orange
+    "Horizontal": "#d31313",  # red
 }
 
 
@@ -399,3 +400,112 @@ plot_queries_3(d, "sparsity", "Queries vs Sparsity")
 plot_size_3(d, "tupleCount", "Size vs Tuple Count")
 plot_size_3(d, "attributeCount", "Size vs Attribute Count")
 plot_size_3(d, "sparsity", "Size vs Sparsity")
+
+
+def plot_queries_4(df, x, title):
+    plt.figure(figsize=(6, 4))
+
+    # reshape to long format
+    df_long = df.melt(
+        id_vars=["representation", x],
+        value_vars=["queryCount1", "queryCount2"],
+        var_name="query",
+        value_name="count",
+    )
+
+    # nicer labels
+    df_long["query"] = df_long["query"].map(
+        {
+            "queryCount1": "Q1",
+            "queryCount2": "Q2",
+        }
+    )
+
+    ax = sns.lineplot(
+        data=df_long,
+        x=x,
+        y="count",
+        hue="representation",  # color = Vertical vs Optimized
+        style="query",  # solid vs dashed = Q1 vs Q2
+        markers=True,
+        palette=palette,
+        dashes=True,
+        errorbar=None,
+        legend=None,  # type: ignore
+    )
+
+    ax.set_xticks(
+        [2000, 4000, 8000]
+        if x == "tupleCount"
+        else [5, 10, 15]
+        if x == "attributeCount"
+        else [1 - 1 / 2, 1 - 1 / 4, 1 - 1 / 16]
+    )
+
+    legend_elements = [
+        Line2D([0], [0], color=palette["Horizontal"], lw=2, label="Horizontal"),
+        Line2D(
+            [0], [0], color=palette["Vertical Functions (Hash Index)"], lw=2, label="Vertical Functions (Hash Index)"
+        ),
+        Line2D([0], [0], color="black", linestyle="-", label="Query 1"),
+        Line2D([0], [0], color="black", linestyle="--", label="Query 2"),
+    ]
+    ax.legend(handles=legend_elements, title=None)
+
+    plt.title(title)
+    plt.ylabel("Query Count")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_size_4(df, x, title):
+    plt.figure(figsize=(6, 4))
+
+    ax = sns.lineplot(
+        data=df,
+        x=x,
+        y="tableSize",
+        hue="representation",
+        palette=palette,
+        marker="o",
+        errorbar=None,
+        legend=False,
+    )
+
+    ax.set_xticks(
+        [2000, 4000, 8000]
+        if x == "tupleCount"
+        else [5, 10, 15]
+        if x == "attributeCount"
+        else [1 - 1 / 2, 1 - 1 / 4, 1 - 1 / 16]
+    )
+
+    legend_elements = [
+        Line2D([0], [0], color=palette["Horizontal"], lw=2, label="Horizontal"),
+        Line2D(
+            [0], [0], color=palette["Vertical Functions (Hash Index)"], lw=2, label="Vertical Functions (Hash Index)"
+        ),
+    ]
+
+    ax.legend(handles=legend_elements, title=None)
+
+    plt.title(title)
+    plt.ylabel("Table Size")
+    plt.tight_layout()
+    plt.show()
+
+
+# ---- Horizontal vs Best Vertical Function (Vertical Functions (Hash)) ----
+
+vertical_funcs = ["Vertical Functions (Hash Index)", "Horizontal"]
+d = df[df["representation"].isin(vertical_funcs)]
+
+plot_queries_4(d, "tupleCount", "Queries vs Tuple Count")
+plot_queries_4(d, "attributeCount", "Queries vs Attribute Count")
+plot_queries_4(d, "sparsity", "Queries vs Sparsity")
+
+# Size
+# NOTE: Once again, consider dropping: they have identical sizes, other than hash index, which is minimally more (due to index)
+plot_size_4(d, "tupleCount", "Size vs Tuple Count")
+plot_size_4(d, "attributeCount", "Size vs Attribute Count")
+plot_size_4(d, "sparsity", "Size vs Sparsity")
