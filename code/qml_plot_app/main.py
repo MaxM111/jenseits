@@ -12,10 +12,7 @@ def main() -> int:
     app = QGuiApplication(sys.argv)
 
     app_dir = Path(__file__).resolve().parent
-    controller = PlotController(
-        csv_path=app_dir.parent / "logs" / "log.csv",
-        output_dir=app_dir / "generated_plots",
-    )
+    controller = PlotController(csv_path=app_dir.parent / "logs" / "log.csv")
 
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("plotController", controller)

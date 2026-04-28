@@ -1,18 +1,7 @@
-import os
 from pathlib import Path
 
-os.environ.setdefault(
-    "MPLCONFIGDIR", str(Path(__file__).resolve().parent / ".matplotlib")
-)
-
-import matplotlib
-
-matplotlib.use("Agg")
-
-import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
-from PyQt6.QtCore import QObject, QUrl, pyqtProperty, pyqtSignal, pyqtSlot
+from PyQt6.QtCore import QObject, pyqtProperty, pyqtSignal, pyqtSlot
 
 
 REPRESENTATION_COLORS = {
@@ -30,11 +19,9 @@ class PlotController(QObject):
     controlsChanged = pyqtSignal()
     representationsChanged = pyqtSignal()
 
-    def __init__(self, csv_path: Path, output_dir: Path) -> None:
+    def __init__(self, csv_path: Path) -> None:
         super().__init__()
         self.csv_path = csv_path
-        self.output_dir = output_dir
-        self.output_dir.mkdir(exist_ok=True)
 
         self.df = pd.read_csv(self.csv_path)
         self.attribute_values = sorted(self.df["attributeCount"].unique().tolist())
@@ -43,11 +30,8 @@ class PlotController(QObject):
         self.selected_representations = set()
         self.attribute_index = 1 if len(self.attribute_values) > 1 else 0
         self.sparsity_index = 1 if len(self.sparsity_values) > 1 else 0
-        self.version = 0
-        self.query_plot_url = ""
-        self.size_plot_url = ""
-
-        sns.set_theme(style="whitegrid")
+        self.query_series = []
+        self.size_series = []
         self.update_plots()
 
     @pyqtProperty(int, notify=controlsChanged)
@@ -74,13 +58,13 @@ class PlotController(QObject):
     def sparsityLabel(self) -> str:
         return str(self.sparsity_values[self.sparsity_index])
 
-    @pyqtProperty(str, notify=plotsChanged)
-    def queryPlotUrl(self) -> str:
-        return self.query_plot_url
+    @pyqtProperty("QVariantList", notify=plotsChanged)
+    def querySeries(self) -> list[dict[str, object]]:
+        return self.query_series
 
-    @pyqtProperty(str, notify=plotsChanged)
-    def sizePlotUrl(self) -> str:
-        return self.size_plot_url
+    @pyqtProperty("QVariantList", notify=plotsChanged)
+    def sizeSeries(self) -> list[dict[str, object]]:
+        return self.size_series
 
     @pyqtProperty("QVariantList", constant=True)
     def representationNames(self) -> list[str]:
@@ -140,121 +124,80 @@ class PlotController(QObject):
 
     def update_plots(self) -> None:
         data = self.filtered_data()
-        self.version += 1
-
-        query_path = self.output_dir / "query_count_vs_tuple_count.png"
-        size_path = self.output_dir / "table_size_vs_tuple_count.png"
-
-        self.write_query_plot(data, query_path)
-        self.write_size_plot(data, size_path)
-
-        self.query_plot_url = self.cache_busted_url(query_path)
-        self.size_plot_url = self.cache_busted_url(size_path)
+        self.query_series = self.build_query_series(data)
+        self.size_series = self.build_size_series(data)
         self.plotsChanged.emit()
 
-    def cache_busted_url(self, path: Path) -> str:
-        return f"{QUrl.fromLocalFile(str(path)).toString()}?v={self.version}"
+    def build_query_series(self, data: pd.DataFrame) -> list[dict[str, object]]:
+        series = []
+        for representation in self.selected_representation_order():
+            representation_data = data[data["representation"] == representation]
+            series.append(
+                self.series_from_rows(
+                    name=f"{representation} Q1",
+                    representation=representation,
+                    line_type="Q1",
+                    color=REPRESENTATION_COLORS[representation],
+                    rows=representation_data,
+                    value_column="queryCount1",
+                    dashed=False,
+                )
+            )
+            series.append(
+                self.series_from_rows(
+                    name=f"{representation} Q2",
+                    representation=representation,
+                    line_type="Q2",
+                    color=REPRESENTATION_COLORS[representation],
+                    rows=representation_data,
+                    value_column="queryCount2",
+                    dashed=True,
+                )
+            )
+        return series
 
-    def write_query_plot(self, data: pd.DataFrame, path: Path) -> None:
-        if data.empty:
-            self.write_empty_plot(path, "Query Count vs Tuple Count")
-            return
+    def build_size_series(self, data: pd.DataFrame) -> list[dict[str, object]]:
+        series = []
+        for representation in self.selected_representation_order():
+            representation_data = data[data["representation"] == representation].copy()
+            representation_data["tableSizeMb"] = (
+                representation_data["tableSize"] / 1_000_000
+            )
+            series.append(
+                self.series_from_rows(
+                    name=representation,
+                    representation=representation,
+                    line_type="",
+                    color=REPRESENTATION_COLORS[representation],
+                    rows=representation_data,
+                    value_column="tableSizeMb",
+                    dashed=False,
+                )
+            )
+        return series
 
-        data_long = data.melt(
-            id_vars=["representation", "tupleCount"],
-            value_vars=["queryCount1", "queryCount2"],
-            var_name="query",
-            value_name="queryCount",
-        )
-        data_long["query"] = data_long["query"].map(
+    def series_from_rows(
+        self,
+        name: str,
+        representation: str,
+        line_type: str,
+        color: str,
+        rows: pd.DataFrame,
+        value_column: str,
+        dashed: bool,
+    ) -> dict[str, object]:
+        points = [
             {
-                "queryCount1": "Query 1",
-                "queryCount2": "Query 2",
+                "x": float(row["tupleCount"]),
+                "y": float(row[value_column]),
             }
-        )
-
-        fig, ax = plt.subplots(figsize=(7.2, 4.4))
-        sns.lineplot(
-            ax=ax,
-            data=data_long,
-            x="tupleCount",
-            y="queryCount",
-            hue="representation",
-            hue_order=self.selected_representation_order(),
-            style="query",
-            markers=True,
-            dashes=True,
-            palette=REPRESENTATION_COLORS,
-            errorbar=None,
-        )
-        ax.set_title(self.title("Query Count vs Tuple Count"))
-        ax.set_xlabel("Tuple Count")
-        ax.set_ylabel("Query Count")
-        ax.set_xticks(sorted(data["tupleCount"].unique().tolist()))
-        self.clean_legend(ax)
-        fig.tight_layout()
-        fig.savefig(path, dpi=140)
-        plt.close(fig)
-
-    def write_size_plot(self, data: pd.DataFrame, path: Path) -> None:
-        if data.empty:
-            self.write_empty_plot(path, "Table Size vs Tuple Count")
-            return
-
-        data = data.copy()
-        data["tableSizeMb"] = data["tableSize"] / 1_000_000
-
-        fig, ax = plt.subplots(figsize=(7.2, 4.4))
-        sns.lineplot(
-            ax=ax,
-            data=data,
-            x="tupleCount",
-            y="tableSizeMb",
-            hue="representation",
-            hue_order=self.selected_representation_order(),
-            marker="o",
-            palette=REPRESENTATION_COLORS,
-            errorbar=None,
-        )
-        ax.set_title(self.title("Table Size vs Tuple Count"))
-        ax.set_xlabel("Tuple Count")
-        ax.set_ylabel("Table Size (MB)")
-        ax.set_xticks(sorted(data["tupleCount"].unique().tolist()))
-        self.clean_legend(ax)
-        fig.tight_layout()
-        fig.savefig(path, dpi=140)
-        plt.close(fig)
-
-    def clean_legend(self, ax) -> None:
-        handles, labels = ax.get_legend_handles_labels()
-        legend_items = [
-            (handle, label)
-            for handle, label in zip(handles, labels)
-            if label not in {"representation", "query"}
+            for _, row in rows.sort_values("tupleCount").iterrows()
         ]
-        if not legend_items:
-            return
-        clean_handles, clean_labels = zip(*legend_items)
-        ax.legend(clean_handles, clean_labels, fontsize=7, loc="best", title=None)
-
-    def write_empty_plot(self, path: Path, title: str) -> None:
-        fig, ax = plt.subplots(figsize=(7.2, 4.4))
-        ax.set_title(self.title(title))
-        ax.text(
-            0.5,
-            0.5,
-            "No representations selected",
-            ha="center",
-            va="center",
-            transform=ax.transAxes,
-        )
-        ax.set_axis_off()
-        fig.tight_layout()
-        fig.savefig(path, dpi=140)
-        plt.close(fig)
-
-    def title(self, base: str) -> str:
-        return (
-            f"{base}\n"
-            f"attributeCount = {self.attributeLabel}, sparsity = {self.sparsityLabel}"
-        )
+        return {
+            "name": name,
+            "representation": representation,
+            "lineType": line_type,
+            "color": color,
+            "dashed": dashed,
+            "points": points,
+        }

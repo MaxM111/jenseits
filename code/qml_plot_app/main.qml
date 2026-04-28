@@ -24,8 +24,8 @@ ApplicationWindow {
         property int sparsityIndex: 1
         property int sparsityCount: 3
         property string sparsityLabel: "0.75"
-        property string queryPlotUrl: ""
-        property string sizePlotUrl: ""
+        property var querySeries: []
+        property var sizeSeries: []
         property var representationNames: [
             "Horizontal",
             "Vertical",
@@ -340,12 +340,16 @@ ApplicationWindow {
                     border.width: 1
                     radius: 8
 
-                    Image {
+                    LineChart {
                         anchors.fill: parent
                         anchors.margins: 18
-                        source: root.backend.queryPlotUrl
-                        fillMode: Image.PreserveAspectFit
-                        cache: false
+                        series: root.backend.querySeries
+                        yLabel: "Query Count"
+                        emptyText: "Select representations to show query counts"
+                        ink: root.ink
+                        muted: root.muted
+                        grid: root.line
+                        panel: root.panel
                     }
                 }
 
@@ -357,12 +361,16 @@ ApplicationWindow {
                     border.width: 1
                     radius: 8
 
-                    Image {
+                    LineChart {
                         anchors.fill: parent
                         anchors.margins: 18
-                        source: root.backend.sizePlotUrl
-                        fillMode: Image.PreserveAspectFit
-                        cache: false
+                        series: root.backend.sizeSeries
+                        yLabel: "Table Size (MB)"
+                        emptyText: "Select representations to show table sizes"
+                        ink: root.ink
+                        muted: root.muted
+                        grid: root.line
+                        panel: root.panel
                     }
                 }
             }
