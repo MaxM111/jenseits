@@ -103,7 +103,6 @@ def fixed_values_label(x: str) -> str:
 
 def save_current_plot(fig, filename: str) -> None:
     OUTPUT_DIR.mkdir(exist_ok=True)
-    fig.tight_layout(rect=(0, 0, 1, 0.84))
     fig.savefig(OUTPUT_DIR / filename, dpi=200)
     plt.close()
 
@@ -172,7 +171,13 @@ def plot_figure(df: pd.DataFrame, figure: dict[str, object]) -> None:
     if not isinstance(representations, list):
         raise TypeError("representations must be a list")
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5.2))
+    fig = plt.figure(figsize=(13.333, 7.5))
+    grid = fig.add_gridspec(2, 4, hspace=0.7, wspace=0.6)
+    axes = [
+        fig.add_subplot(grid[0, 0:2]),
+        fig.add_subplot(grid[0, 2:4]),
+        fig.add_subplot(grid[1, 1:3]),
+    ]
 
     for ax, x in zip(axes, XTICKS):
         if figure["metric"] == "queries":
@@ -188,13 +193,14 @@ def plot_figure(df: pd.DataFrame, figure: dict[str, object]) -> None:
             Line2D([0], [0], color="black", linestyle="--", label="Query 2"),
         ]
 
-    fig.suptitle(str(figure["title"]), fontsize=16)
+    fig.subplots_adjust(left=0.08, right=0.97, bottom=0.08, top=0.76)
+    fig.suptitle(str(figure["title"]), fontsize=16, y=0.96)
     fig.legend(
         handles=handles,
         loc="upper center",
         ncol=min(len(handles), 5),
         frameon=False,
-        bbox_to_anchor=(0.5, 0.84),
+        bbox_to_anchor=(0.5, 0.86),
     )
     save_current_plot(fig, str(figure["filename"]))
 
