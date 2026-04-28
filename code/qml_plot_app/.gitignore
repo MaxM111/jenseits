@@ -1,0 +1,3 @@
+generated_plots/
+.matplotlib/
+__pycache__/
