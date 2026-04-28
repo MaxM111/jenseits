@@ -172,7 +172,7 @@ class PlotController(QObject):
         ax.set_xlabel("Tuple Count")
         ax.set_ylabel("Query Count")
         ax.set_xticks(sorted(data["tupleCount"].unique().tolist()))
-        ax.legend(fontsize=7, loc="best")
+        self.clean_legend(ax)
         fig.tight_layout()
         fig.savefig(path, dpi=140)
         plt.close(fig)
@@ -196,10 +196,22 @@ class PlotController(QObject):
         ax.set_xlabel("Tuple Count")
         ax.set_ylabel("Table Size (bytes)")
         ax.set_xticks(sorted(data["tupleCount"].unique().tolist()))
-        ax.legend(fontsize=7, loc="best")
+        self.clean_legend(ax)
         fig.tight_layout()
         fig.savefig(path, dpi=140)
         plt.close(fig)
+
+    def clean_legend(self, ax) -> None:
+        handles, labels = ax.get_legend_handles_labels()
+        legend_items = [
+            (handle, label)
+            for handle, label in zip(handles, labels)
+            if label not in {"representation", "query"}
+        ]
+        if not legend_items:
+            return
+        clean_handles, clean_labels = zip(*legend_items)
+        ax.legend(clean_handles, clean_labels, fontsize=7, loc="best", title=None)
 
     def write_empty_plot(self, path: Path, title: str) -> None:
         fig, ax = plt.subplots(figsize=(7.2, 4.4))

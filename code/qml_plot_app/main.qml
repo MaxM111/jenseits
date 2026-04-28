@@ -78,19 +78,6 @@ ApplicationWindow {
                 anchors.margins: 18
                 spacing: 18
 
-                Label {
-                    text: "Benchmark Explorer"
-                    color: root.ink
-                    font.pixelSize: 20
-                    font.weight: Font.Bold
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: 1
-                    color: root.line
-                }
-
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 8
@@ -294,14 +281,6 @@ ApplicationWindow {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 12
-
-                Label {
-                    Layout.fillWidth: true
-                    text: "Benchmark Plots"
-                    color: root.ink
-                    font.pixelSize: 22
-                    font.weight: Font.Bold
-                }
 
                 TabBar {
                     id: plotTabs
