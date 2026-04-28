@@ -10,6 +10,9 @@ dependency-reduced-pom.xml
 ### tsv ###
 *.tsv
 
+### Generated plots ###
+plots/
+
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml
