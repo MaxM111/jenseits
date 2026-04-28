@@ -8,8 +8,13 @@ ApplicationWindow {
     height: 820
     visible: true
     title: "Benchmark Plot Explorer"
-    color: "#f7f7f4"
+    color: "#eef0ed"
     property var backend: typeof plotController === "undefined" ? previewController : plotController
+    readonly property color ink: "#171712"
+    readonly property color muted: "#6f746b"
+    readonly property color panel: "#fbfbf8"
+    readonly property color line: "#d6d8d1"
+    readonly property color accent: "#2563eb"
 
     QtObject {
         id: previewController
@@ -55,187 +60,331 @@ ApplicationWindow {
         }
     }
 
-    ColumnLayout {
+    RowLayout {
         anchors.fill: parent
-        anchors.margins: 18
-        spacing: 14
+        anchors.margins: 20
+        spacing: 18
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 32
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 6
-
-                RowLayout {
-                    spacing: 8
-
-                    Label {
-                        text: "Attribute Count"
-                        color: "#171712"
-                        font.pixelSize: 15
-                        font.weight: Font.DemiBold
-                    }
-
-                    Rectangle {
-                        color: "#171712"
-                        radius: 4
-                        implicitWidth: 48
-                        implicitHeight: 26
-
-                        Label {
-                            anchors.centerIn: parent
-                            text: root.backend.attributeLabel
-                            color: "white"
-                            font.pixelSize: 15
-                            font.weight: Font.Bold
-                        }
-                    }
-                }
-
-                Slider {
-                    Layout.fillWidth: true
-                    from: 0
-                    to: root.backend.attributeCount - 1
-                    stepSize: 1
-                    snapMode: Slider.SnapAlways
-                    value: root.backend.attributeIndex
-                    onMoved: root.backend.setAttributeIndex(Math.round(value))
-                }
-            }
+        Rectangle {
+            Layout.preferredWidth: 340
+            Layout.fillHeight: true
+            color: root.panel
+            radius: 8
+            border.color: root.line
+            border.width: 1
 
             ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 6
+                anchors.fill: parent
+                anchors.margins: 18
+                spacing: 18
 
-                RowLayout {
+                Label {
+                    text: "Benchmark Explorer"
+                    color: root.ink
+                    font.pixelSize: 20
+                    font.weight: Font.Bold
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: 1
+                    color: root.line
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
                     spacing: 8
 
-                    Label {
-                        text: "Sparsity"
-                        color: "#171712"
-                        font.pixelSize: 15
-                        font.weight: Font.DemiBold
-                    }
-
-                    Rectangle {
-                        color: "#171712"
-                        radius: 4
-                        implicitWidth: 70
-                        implicitHeight: 26
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
 
                         Label {
-                            anchors.centerIn: parent
-                            text: root.backend.sparsityLabel
-                            color: "white"
-                            font.pixelSize: 15
-                            font.weight: Font.Bold
-                        }
-                    }
-                }
-
-                Slider {
-                    Layout.fillWidth: true
-                    from: 0
-                    to: root.backend.sparsityCount - 1
-                    stepSize: 1
-                    snapMode: Slider.SnapAlways
-                    value: root.backend.sparsityIndex
-                    onMoved: root.backend.setSparsityIndex(Math.round(value))
-                }
-            }
-        }
-
-        Flow {
-            Layout.fillWidth: true
-            spacing: 12
-
-            Repeater {
-                model: root.backend.representationNames
-
-                CheckBox {
-                    id: representationToggle
-                    text: modelData
-                    checked: root.backend.isRepresentationSelected(modelData)
-                    font.pixelSize: 13
-                    indicator: Rectangle {
-                        implicitWidth: 18
-                        implicitHeight: 18
-                        x: parent.leftPadding
-                        y: parent.topPadding + (parent.availableHeight - height) / 2
-                        radius: 3
-                        color: parent.checked ? "#171712" : "white"
-                        border.color: "#171712"
-                        border.width: 2
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: parent.parent.checked ? "✓" : ""
-                            color: "white"
+                            Layout.fillWidth: true
+                            text: "Attribute Count"
+                            color: root.ink
                             font.pixelSize: 14
-                            font.weight: Font.Bold
+                            font.weight: Font.DemiBold
+                        }
+
+                        Rectangle {
+                            color: root.ink
+                            radius: 5
+                            implicitWidth: 52
+                            implicitHeight: 28
+
+                            Label {
+                                anchors.centerIn: parent
+                                text: root.backend.attributeLabel
+                                color: "white"
+                                font.pixelSize: 15
+                                font.weight: Font.Bold
+                            }
                         }
                     }
-                    contentItem: Text {
-                        text: representationToggle.text
-                        color: "#171712"
-                        font.pixelSize: 13
-                        leftPadding: representationToggle.indicator.width + representationToggle.spacing
-                        verticalAlignment: Text.AlignVCenter
+
+                    Slider {
+                        id: attributeSlider
+                        Layout.fillWidth: true
+                        from: 0
+                        to: root.backend.attributeCount - 1
+                        stepSize: 1
+                        snapMode: Slider.SnapAlways
+                        value: root.backend.attributeIndex
+                        onMoved: root.backend.setAttributeIndex(Math.round(value))
+                        background: Rectangle {
+                            x: attributeSlider.leftPadding
+                            y: attributeSlider.topPadding + attributeSlider.availableHeight / 2 - height / 2
+                            width: attributeSlider.availableWidth
+                            height: 6
+                            radius: 3
+                            color: "#d8ddd4"
+
+                            Rectangle {
+                                width: attributeSlider.visualPosition * parent.width
+                                height: parent.height
+                                radius: 3
+                                color: root.accent
+                            }
+                        }
+                        handle: Rectangle {
+                            x: attributeSlider.leftPadding + attributeSlider.visualPosition * (attributeSlider.availableWidth - width)
+                            y: attributeSlider.topPadding + attributeSlider.availableHeight / 2 - height / 2
+                            implicitWidth: 20
+                            implicitHeight: 20
+                            radius: 10
+                            color: "white"
+                            border.color: root.accent
+                            border.width: 3
+                        }
                     }
-                    onToggled: root.backend.setRepresentationSelected(modelData, checked)
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        Label {
+                            Layout.fillWidth: true
+                            text: "Sparsity"
+                            color: root.ink
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
+                        }
+
+                        Rectangle {
+                            color: root.ink
+                            radius: 5
+                            implicitWidth: 76
+                            implicitHeight: 28
+
+                            Label {
+                                anchors.centerIn: parent
+                                text: root.backend.sparsityLabel
+                                color: "white"
+                                font.pixelSize: 15
+                                font.weight: Font.Bold
+                            }
+                        }
+                    }
+
+                    Slider {
+                        id: sparsitySlider
+                        Layout.fillWidth: true
+                        from: 0
+                        to: root.backend.sparsityCount - 1
+                        stepSize: 1
+                        snapMode: Slider.SnapAlways
+                        value: root.backend.sparsityIndex
+                        onMoved: root.backend.setSparsityIndex(Math.round(value))
+                        background: Rectangle {
+                            x: sparsitySlider.leftPadding
+                            y: sparsitySlider.topPadding + sparsitySlider.availableHeight / 2 - height / 2
+                            width: sparsitySlider.availableWidth
+                            height: 6
+                            radius: 3
+                            color: "#d8ddd4"
+
+                            Rectangle {
+                                width: sparsitySlider.visualPosition * parent.width
+                                height: parent.height
+                                radius: 3
+                                color: root.accent
+                            }
+                        }
+                        handle: Rectangle {
+                            x: sparsitySlider.leftPadding + sparsitySlider.visualPosition * (sparsitySlider.availableWidth - width)
+                            y: sparsitySlider.topPadding + sparsitySlider.availableHeight / 2 - height / 2
+                            implicitWidth: 20
+                            implicitHeight: 20
+                            radius: 10
+                            color: "white"
+                            border.color: root.accent
+                            border.width: 3
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: 1
+                    color: root.line
+                }
+
+                Label {
+                    text: "Representations"
+                    color: root.ink
+                    font.pixelSize: 14
+                    font.weight: Font.DemiBold
+                }
+
+                Flow {
+                    Layout.fillWidth: true
+                    spacing: 10
+
+                    Repeater {
+                        model: root.backend.representationNames
+
+                        CheckBox {
+                            id: representationToggle
+                            text: modelData
+                            checked: root.backend.isRepresentationSelected(modelData)
+                            font.pixelSize: 13
+                            indicator: Rectangle {
+                                implicitWidth: 18
+                                implicitHeight: 18
+                                x: parent.leftPadding
+                                y: parent.topPadding + (parent.availableHeight - height) / 2
+                                radius: 4
+                                color: parent.checked ? root.accent : "white"
+                                border.color: parent.checked ? root.accent : root.ink
+                                border.width: 2
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: parent.parent.checked ? "✓" : ""
+                                    color: "white"
+                                    font.pixelSize: 14
+                                    font.weight: Font.Bold
+                                }
+                            }
+                            contentItem: Text {
+                                text: representationToggle.text
+                                color: root.ink
+                                font.pixelSize: 13
+                                leftPadding: representationToggle.indicator.width + representationToggle.spacing
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            onToggled: root.backend.setRepresentationSelected(modelData, checked)
+                        }
+                    }
                 }
             }
         }
 
-        TabBar {
-            id: plotTabs
-            Layout.fillWidth: true
-
-            TabButton {
-                text: "Query Count"
-            }
-
-            TabButton {
-                text: "Table Size"
-            }
-        }
-
-        StackLayout {
+        ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            currentIndex: plotTabs.currentIndex
+            spacing: 12
 
-            Rectangle {
+            RowLayout {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
-                color: "white"
-                border.color: "#d8d8d2"
-                radius: 4
+                spacing: 12
 
-                Image {
-                    anchors.fill: parent
-                    anchors.margins: 10
-                    source: root.backend.queryPlotUrl
-                    fillMode: Image.PreserveAspectFit
-                    cache: false
+                Label {
+                    Layout.fillWidth: true
+                    text: "Benchmark Plots"
+                    color: root.ink
+                    font.pixelSize: 22
+                    font.weight: Font.Bold
+                }
+
+                TabBar {
+                    id: plotTabs
+                    Layout.preferredWidth: 320
+                    implicitHeight: 40
+                    background: Rectangle {
+                        color: "#dde2dc"
+                        radius: 8
+                    }
+
+                    TabButton {
+                        id: queryTab
+                        text: "Query Count"
+                        contentItem: Text {
+                            text: queryTab.text
+                            color: plotTabs.currentIndex === 0 ? "white" : root.ink
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        background: Rectangle {
+                            color: plotTabs.currentIndex === 0 ? root.ink : "transparent"
+                            radius: 7
+                        }
+                    }
+
+                    TabButton {
+                        id: sizeTab
+                        text: "Table Size"
+                        contentItem: Text {
+                            text: sizeTab.text
+                            color: plotTabs.currentIndex === 1 ? "white" : root.ink
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        background: Rectangle {
+                            color: plotTabs.currentIndex === 1 ? root.ink : "transparent"
+                            radius: 7
+                        }
+                    }
                 }
             }
 
-            Rectangle {
+            StackLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                color: "white"
-                border.color: "#d8d8d2"
-                radius: 4
+                currentIndex: plotTabs.currentIndex
 
-                Image {
-                    anchors.fill: parent
-                    anchors.margins: 10
-                    source: root.backend.sizePlotUrl
-                    fillMode: Image.PreserveAspectFit
-                    cache: false
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    color: root.panel
+                    border.color: root.line
+                    border.width: 1
+                    radius: 8
+
+                    Image {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        source: root.backend.queryPlotUrl
+                        fillMode: Image.PreserveAspectFit
+                        cache: false
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    color: root.panel
+                    border.color: root.line
+                    border.width: 1
+                    radius: 8
+
+                    Image {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        source: root.backend.sizePlotUrl
+                        fillMode: Image.PreserveAspectFit
+                        cache: false
+                    }
                 }
             }
         }
