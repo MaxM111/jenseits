@@ -18,8 +18,9 @@ public class Jenseits02 implements AutoCloseable {
         }
 
         var pair = generate(10, 0.5);
-        IO.println(pair.getFirst().toString());
-        IO.println(pair.getFirst().toString());
+
+        printMatrix(pair.getFirst());
+        printMatrix(pair.getFirst());
 
         logger.close();
     }
@@ -66,4 +67,15 @@ public class Jenseits02 implements AutoCloseable {
 
         return new Pair<double[][], double[][]>(A, B);
     }
+
+    public static void printMatrix(double[][] matrix) {
+        for (int row = 0; row < matrix.length; row++) {
+            for (int col = 0; col < matrix[0].length; col++) {
+                IO.print(String.format("%.2f ", matrix[row][col]));
+            }
+            IO.println();
+        }
+        IO.println();
+    }
+
 }
