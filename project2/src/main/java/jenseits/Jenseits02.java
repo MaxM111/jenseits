@@ -51,7 +51,7 @@ public class Jenseits02 implements AutoCloseable {
         double[][] A = new double[m][l]; // m x l
         double[][] B = new double[l][n]; // l x n
 
-        // NOTE: wie Werte bestimmen?? Erstmal gleichverteilt über [1, 11];
+        // NOTE: wie Werte bestimmen?? Erstmal gleichverteilt über [1, 100];
         Random rand = new Random();
 
         for (int i = 0; i < m; i++) {
