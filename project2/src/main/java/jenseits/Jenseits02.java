@@ -11,18 +11,19 @@ public class Jenseits02 implements AutoCloseable {
     private static Logger logger;
 
     public static void main(String[] args) throws Exception {
-        logger = new Logger("logs", "log.csv");
-
         try (var obj = new Jenseits02()) {
             // TODO:
         }
 
-        var pair = generate(10, 0.5);
+        var pair = generate(4, 0.5);
+        var A = pair.getFirst();
+        var B = pair.getSecond();
 
-        printMatrix(pair.getFirst());
-        printMatrix(pair.getFirst());
+        printMatrix(A);
+        printMatrix(B);
 
-        logger.close();
+        var C = matrixMultiply(A, B);
+        printMatrix(C);
     }
 
     // NOTE: lets do it more OOP this time, i.e. use fields for state tracking
@@ -76,6 +77,28 @@ public class Jenseits02 implements AutoCloseable {
             IO.println();
         }
         IO.println();
+    }
+
+    // Reference: https://en.wikipedia.org/wiki/Matrix_multiplication
+    //
+    // I have checked this against a matrix calculator and it seems almost correct.
+    // I think the minor deviation comes from floating point.
+    public static double[][] matrixMultiply(double[][] A, double[][] B) {
+        var result = new double[A.length][B[0].length];
+        for (int i = 0; i < A.length; i++) {
+            for (int j = 0; j < B[0].length; j++) {
+                result[i][j] = computeMatrixMultiplicationCell(A, B, i, j);
+            }
+        }
+        return result;
+    }
+
+    private static double computeMatrixMultiplicationCell(double[][] A, double[][] B, int i, int j) {
+        double sum = 0;
+        for (int k = 0; k < B.length; k++) {
+            sum += A[i][k] * B[k][j];
+        }
+        return sum;
     }
 
 }
