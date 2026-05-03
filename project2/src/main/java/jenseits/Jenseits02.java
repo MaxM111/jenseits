@@ -1,25 +1,22 @@
 package jenseits;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.Random;
+import java.sql.Statement;
 
 import jenseits.setup.*;
 import jenseits.util.*;
+import jenseits.setup.Pair;
 
 public class Jenseits02 implements AutoCloseable {
 
     private static Logger logger;
 
     public static void main(String[] args) throws Exception {
-        show_toy_example()
+        show_toy_example();
         try (var obj = new Jenseits02()) {
-            var pair = generate(4, 0.5);
-            var A = pair.getFirst();
-            var B = pair.getSecond();
-            printMatrix(A);
-            printMatrix(B);
-
-            obj.importMatrices(A, B);
+            obj.createMatrixTables();
         }
 
     }
@@ -38,6 +35,44 @@ public class Jenseits02 implements AutoCloseable {
         conn.close();
     }
 
+    /*
+     * Creates two tables to store two matrices as described in
+     * "Effiziente Matrixmultiplikationen"
+     */
+    private void createMatrixTables() throws Exception {
+        Statement stmt = conn.createStatement();
+        stmt.execute("DROP TABLE IF EXISTS A");
+        stmt.execute("DROP TABLE IF EXISTS B");
+        stmt.execute("CREATE TABLE A (i INTEGER, j INTEGER, val DOUBLE PRECISION)");
+        stmt.execute("CREATE TABLE B (i INTEGER, j INTEGER, val DOUBLE PRECISION)");
+    }
+
+    /*
+     *
+     */
+    private void fillMatrixTables(Pair<double[][], double[][]> p) throws Exception {
+        double[][] a = p.getFirst();
+        double[][] b = p.getSecond();
+        PreparedStatement pstmt1 = conn.prepareStatement("INSERT INTO A (?,?,?)");
+        for (int i = 0; i < a.length; i++) {
+            for (int j = 0; j < a[i].length; j++) {
+                pstmt1.setInt(1, i);
+                pstmt1.setInt(2, j);
+                pstmt1.setDouble(3, a[i][j]);
+                pstmt1.execute();
+            }
+        }
+        PreparedStatement pstmt2 = conn.prepareStatement("INSERT INTO B (?,?,?)");
+        for (int i = 0; i < b.length; i++) {
+            for (int j = 0; j < b[i].length; j++) {
+                pstmt2.setInt(1, i);
+                pstmt2.setInt(2, j);
+                pstmt2.setDouble(3, a[i][j]);
+                pstmt2.execute();
+            }
+        }
+    }
+
     public static void show_toy_example() {
         var pair = generate(4, 0.5);
         var A = pair.getFirst();
@@ -48,7 +83,6 @@ public class Jenseits02 implements AutoCloseable {
 
         var C = matrixMultiply(A, B);
         printMatrix(C);
-
     }
 
     /*
