@@ -6,6 +6,7 @@ import java.util.Random;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.lang.String;
 
 import jenseits.setup.*;
 import jenseits.util.*;
@@ -20,15 +21,17 @@ public class Jenseits02 implements AutoCloseable {
         show_toy_example();
         System.out.println("DB Example:");
         try (var obj = new Jenseits02()) {
-            obj.createMatrixTables();
+            obj.createMatrixTable("A");
+            obj.createMatrixTable("B");
             int length = 4;
             var pair = generate(length, 0.5);
             System.out.println("Matrix A: ");
             printMatrix(pair.getFirst());
             System.out.println("Matrix B: ");
             printMatrix(pair.getSecond());
-            obj.fillMatrixTables(pair);
-            obj.createDBMSMultFunction();
+            obj.fillMatrixTable("A", pair.getFirst());
+            obj.fillMatrixTable("B", pair.getSecond());
+            obj.createDBMSMultFunction("A", "B");
             System.out.println("Result C: ");
             printMatrix(obj.calculateMatrixMultiplication(length));
         }
@@ -53,49 +56,34 @@ public class Jenseits02 implements AutoCloseable {
      * up to 16383 digits after decimal point. Requires java BigDecimal.
      * https://www.postgresql.org/docs/current/datatype-numeric.html
      */
-    private void createMatrixTables() throws Exception {
+    private void createMatrixTable(String name) throws Exception {
         Statement stmt = conn.createStatement();
-        stmt.execute("DROP TABLE IF EXISTS A");
-        stmt.execute("DROP TABLE IF EXISTS B");
-        stmt.execute("CREATE TABLE A (i INTEGER, j INTEGER, val DOUBLE PRECISION)");
-        stmt.execute("CREATE TABLE B (i INTEGER, j INTEGER, val DOUBLE PRECISION)");
+        stmt.execute(String.format("DROP TABLE IF EXISTS %s", name));
+        stmt.execute(String.format("CREATE TABLE %s (i INTEGER, j INTEGER, val DOUBLE PRECISION)", name));
     }
 
     /*
-     * Stores a pair of matrices in two DB tables
+     * Stores a matrix in the designated DB table
      */
-    private void fillMatrixTables(Pair<double[][], double[][]> p) throws Exception {
-        double[][] a = p.getFirst();
-        double[][] b = p.getSecond();
-        PreparedStatement pstmt1 = conn.prepareStatement("INSERT INTO A VALUES (?,?,?)");
-        for (int i = 0; i < a.length; i++) {
-            for (int j = 0; j < a[i].length; j++) {
-                if (a[i][j] == 0) {
+    private void fillMatrixTable(String tableName, double[][] m) throws Exception {
+        PreparedStatement pstmt1 = conn.prepareStatement(String.format("INSERT INTO %s VALUES (?,?,?)", tableName));
+        for (int i = 0; i < m.length; i++) {
+            for (int j = 0; j < m[i].length; j++) {
+                if (m[i][j] == 0) {
                     continue;
                 }
                 pstmt1.setInt(1, i);
                 pstmt1.setInt(2, j);
-                pstmt1.setDouble(3, a[i][j]);
+                pstmt1.setDouble(3, m[i][j]);
                 pstmt1.execute();
-            }
-        }
-        PreparedStatement pstmt2 = conn.prepareStatement("INSERT INTO B VALUES (?,?,?)");
-        for (int i = 0; i < b.length; i++) {
-            for (int j = 0; j < b[i].length; j++) {
-                if (b[i][j] == 0) {
-                    continue;
-                }
-                pstmt2.setInt(1, i);
-                pstmt2.setInt(2, j);
-                pstmt2.setDouble(3, b[i][j]);
-                pstmt2.execute();
             }
         }
     }
 
     // TODO: Find best option to dertmine matrix shape. matrix shape is hardcoded
     // for now.
-    private double[][] calculateMatrixMultiplication(int length) throws Exception {
+    private double[][] calculateMatrixMultiplication(int length)
+            throws Exception {
         Statement stmt = conn.createStatement();
         double[][] resultMatrix = new double[length - 1][length - 1];
         ResultSet rs = stmt.executeQuery("SELECT * FROM mult()");
@@ -105,20 +93,27 @@ public class Jenseits02 implements AutoCloseable {
         return resultMatrix;
     }
 
-    private void createDBMSMultFunction() throws Exception {
+    /*
+     * Approach1: Creates a DBMS function for the multiplication of two matrix
+     * tables
+     */
+    // TODO: better option?
+    private void createDBMSMultFunction(String matrixName1, String matrixName2) throws Exception {
         Statement stmt = conn.createStatement();
         stmt.execute("DROP FUNCTION IF EXISTS mult ()");
-        stmt.execute(
+        stmt.execute(String.format(
                 """
-                                    CREATE FUNCTION mult() RETURNS TABLE(i INTEGER, j INTEGER, val DOUBLE PRECISION)
+                                    CREATE FUNCTION mult()
+                                    RETURNS TABLE(i INTEGER, j INTEGER, val DOUBLE PRECISION)
                                     LANGUAGE SQL STABLE
                                     AS $$
-                                    SELECT A.i, B.j, SUM(A.val * B.val)
-                                    FROM A,B
-                                    WHERE A.j = B.i
-                                    GROUP BY A.i, B.j
+                                    SELECT %s.i, %s.j, SUM(%s.val * %s.val)
+                                    FROM %s, %s
+                                    WHERE %s.j = %s.i
+                                    GROUP BY %s.i, %s.j
                                     $$
-                        """);
+                        """, matrixName1, matrixName2, matrixName1, matrixName2, matrixName1, matrixName2, matrixName1,
+                matrixName2, matrixName1, matrixName2));
     }
 
     public static void show_toy_example() {
