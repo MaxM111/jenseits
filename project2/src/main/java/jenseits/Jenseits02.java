@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.Random;
 import java.sql.Statement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 
 import jenseits.setup.*;
 import jenseits.util.*;
@@ -14,17 +16,24 @@ public class Jenseits02 implements AutoCloseable {
     private static Logger logger;
 
     public static void main(String[] args) throws Exception {
+        System.out.println("Toy Example:");
         show_toy_example();
+        System.out.println("DB Example:");
         try (var obj = new Jenseits02()) {
             obj.createMatrixTables();
-            var pair = generate(4, 0.5);
+            int length = 4;
+            var pair = generate(length, 0.5);
+            System.out.println("Matrix A: ");
+            printMatrix(pair.getFirst());
+            System.out.println("Matrix B: ");
+            printMatrix(pair.getSecond());
             obj.fillMatrixTables(pair);
+            obj.createDBMSMultFunction();
+            System.out.println("Result C: ");
+            printMatrix(obj.calculateMatrixMultiplication(length));
         }
-
     }
 
-    // NOTE: lets do it more OOP this time, i.e. use fields for state tracking
-    // rather than passing vars
     Connection conn;
 
     public Jenseits02() throws Exception {
@@ -82,6 +91,40 @@ public class Jenseits02 implements AutoCloseable {
                 pstmt2.execute();
             }
         }
+    }
+
+    // TODO: Find best option to dertmine matrix shape. matrix shape is hardcoded
+    // for now.
+    private double[][] calculateMatrixMultiplication(int length) throws Exception {
+        PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM mult(?,?)");
+        double[][] resultMatrix = new double[length - 1][length - 1];
+        for (int i = 0; i < length; i++) {
+            for (int j = 0; j < length; j++) {
+                pstmt.setInt(1, i);
+                pstmt.setInt(2, j);
+                ResultSet rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    resultMatrix[rs.getInt(1)][rs.getInt(2)] = rs.getDouble(3);
+                }
+            }
+        }
+        return resultMatrix;
+    }
+
+    private void createDBMSMultFunction() throws Exception {
+        Statement stmt = conn.createStatement();
+        stmt.execute("DROP FUNCTION IF EXISTS mult (INTEGER, INTEGER)");
+        stmt.execute(
+                """
+                                    CREATE FUNCTION mult(i INTEGER, j INTEGER) RETURNS TABLE(i INTEGER, j INTEGER, val DOUBLE PRECISION)
+                                    LANGUAGE SQL
+                                    AS $$
+                                    SELECT A.i, B.j, SUM(A.val * B.val)
+                                    FROM A,B
+                                    WHERE A.j = B.i
+                                    GROUP BY A.i, B.j
+                                    $$
+                        """);
     }
 
     public static void show_toy_example() {
