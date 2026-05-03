@@ -38,17 +38,20 @@ public class Jenseits02 implements AutoCloseable {
     /*
      * Creates two tables to store two matrices as described in
      * "Effiziente Matrixmultiplikationen"
+     * NOTE: Numeric datatype precision can be adjusted up to 16383 digits after
+     * decimal point
+     * https://www.postgresql.org/docs/current/datatype-numeric.html
      */
     private void createMatrixTables() throws Exception {
         Statement stmt = conn.createStatement();
         stmt.execute("DROP TABLE IF EXISTS A");
         stmt.execute("DROP TABLE IF EXISTS B");
-        stmt.execute("CREATE TABLE A (i INTEGER, j INTEGER, val DOUBLE PRECISION)");
-        stmt.execute("CREATE TABLE B (i INTEGER, j INTEGER, val DOUBLE PRECISION)");
+        stmt.execute("CREATE TABLE A (i INTEGER, j INTEGER, val NUMERIC)");
+        stmt.execute("CREATE TABLE B (i INTEGER, j INTEGER, val NUMERIC)");
     }
 
     /*
-     *
+     * Stores a pair of matrices in two DB tables
      */
     private void fillMatrixTables(Pair<double[][], double[][]> p) throws Exception {
         double[][] a = p.getFirst();
