@@ -17,6 +17,8 @@ public class Jenseits02 implements AutoCloseable {
         show_toy_example();
         try (var obj = new Jenseits02()) {
             obj.createMatrixTables();
+            var pair = generate(4, 0.5);
+            obj.fillMatrixTables(pair);
         }
 
     }
@@ -38,16 +40,16 @@ public class Jenseits02 implements AutoCloseable {
     /*
      * Creates two tables to store two matrices as described in
      * "Effiziente Matrixmultiplikationen"
-     * NOTE: Numeric datatype precision can be adjusted up to 16383 digits after
-     * decimal point
+     * NOTE: could use numeric datatype. Numeric datatype precision can be adjusted
+     * up to 16383 digits after decimal point. Requires java BigDecimal.
      * https://www.postgresql.org/docs/current/datatype-numeric.html
      */
     private void createMatrixTables() throws Exception {
         Statement stmt = conn.createStatement();
         stmt.execute("DROP TABLE IF EXISTS A");
         stmt.execute("DROP TABLE IF EXISTS B");
-        stmt.execute("CREATE TABLE A (i INTEGER, j INTEGER, val NUMERIC)");
-        stmt.execute("CREATE TABLE B (i INTEGER, j INTEGER, val NUMERIC)");
+        stmt.execute("CREATE TABLE A (i INTEGER, j INTEGER, val DOUBLE PRECISION)");
+        stmt.execute("CREATE TABLE B (i INTEGER, j INTEGER, val DOUBLE PRECISION)");
     }
 
     /*
@@ -56,21 +58,27 @@ public class Jenseits02 implements AutoCloseable {
     private void fillMatrixTables(Pair<double[][], double[][]> p) throws Exception {
         double[][] a = p.getFirst();
         double[][] b = p.getSecond();
-        PreparedStatement pstmt1 = conn.prepareStatement("INSERT INTO A (?,?,?)");
+        PreparedStatement pstmt1 = conn.prepareStatement("INSERT INTO A VALUES (?,?,?)");
         for (int i = 0; i < a.length; i++) {
             for (int j = 0; j < a[i].length; j++) {
+                if (a[i][j] == 0) {
+                    continue;
+                }
                 pstmt1.setInt(1, i);
                 pstmt1.setInt(2, j);
                 pstmt1.setDouble(3, a[i][j]);
                 pstmt1.execute();
             }
         }
-        PreparedStatement pstmt2 = conn.prepareStatement("INSERT INTO B (?,?,?)");
+        PreparedStatement pstmt2 = conn.prepareStatement("INSERT INTO B VALUES (?,?,?)");
         for (int i = 0; i < b.length; i++) {
             for (int j = 0; j < b[i].length; j++) {
+                if (b[i][j] == 0) {
+                    continue;
+                }
                 pstmt2.setInt(1, i);
                 pstmt2.setInt(2, j);
-                pstmt2.setDouble(3, a[i][j]);
+                pstmt2.setDouble(3, b[i][j]);
                 pstmt2.execute();
             }
         }
