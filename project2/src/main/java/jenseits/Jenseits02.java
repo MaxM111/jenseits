@@ -12,18 +12,15 @@ public class Jenseits02 implements AutoCloseable {
 
     public static void main(String[] args) throws Exception {
         try (var obj = new Jenseits02()) {
-            // TODO:
+            var pair = generate(4, 0.5);
+            var A = pair.getFirst();
+            var B = pair.getSecond();
+            printMatrix(A);
+            printMatrix(B);
+
+            obj.importMatrices(A, B);
         }
 
-        var pair = generate(4, 0.5);
-        var A = pair.getFirst();
-        var B = pair.getSecond();
-
-        printMatrix(A);
-        printMatrix(B);
-
-        var C = matrixMultiply(A, B);
-        printMatrix(C);
     }
 
     // NOTE: lets do it more OOP this time, i.e. use fields for state tracking
@@ -101,4 +98,38 @@ public class Jenseits02 implements AutoCloseable {
         return sum;
     }
 
+    public record Matrix(String name, double[][] data) {
+    }
+
+    public void importMatrices(double[][] A, double[][] B) throws Exception {
+        var statement = conn.createStatement();
+        statement.execute("DROP TABLE IF EXISTS A, B");
+
+        var createStmt = "CREATE TABLE %s (i INTEGER, j INTEGER, val DOUBLE PRECISION)";
+        var insertStmt = "INSERT INTO %s VALUES (?, ?, ?)";
+
+        var matrices = new Matrix[] {
+                new Matrix("A", A),
+                new Matrix("B", B)
+        };
+
+        for (Matrix matrix : matrices) {
+            String table = matrix.name;
+            statement.execute(String.format(createStmt, table));
+
+            var preparedStatementA = conn.prepareStatement(String.format(insertStmt, table));
+            for (int i = 0; i < matrix.data.length; i++) {
+                for (int j = 0; j < matrix.data[0].length; j++) {
+                    double val = matrix.data[i][j];
+
+                    if (val != 0) {
+                        preparedStatementA.setInt(1, i);
+                        preparedStatementA.setInt(2, j);
+                        preparedStatementA.setDouble(3, val);
+                        preparedStatementA.execute();
+                    }
+                }
+            }
+        }
+    }
 }
