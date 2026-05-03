@@ -96,28 +96,22 @@ public class Jenseits02 implements AutoCloseable {
     // TODO: Find best option to dertmine matrix shape. matrix shape is hardcoded
     // for now.
     private double[][] calculateMatrixMultiplication(int length) throws Exception {
-        PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM mult(?,?)");
+        Statement stmt = conn.createStatement();
         double[][] resultMatrix = new double[length - 1][length - 1];
-        for (int i = 0; i < length; i++) {
-            for (int j = 0; j < length; j++) {
-                pstmt.setInt(1, i);
-                pstmt.setInt(2, j);
-                ResultSet rs = pstmt.executeQuery();
-                while (rs.next()) {
-                    resultMatrix[rs.getInt(1)][rs.getInt(2)] = rs.getDouble(3);
-                }
-            }
+        ResultSet rs = stmt.executeQuery("SELECT * FROM mult()");
+        while (rs.next()) {
+            resultMatrix[rs.getInt(1)][rs.getInt(2)] = rs.getDouble(3);
         }
         return resultMatrix;
     }
 
     private void createDBMSMultFunction() throws Exception {
         Statement stmt = conn.createStatement();
-        stmt.execute("DROP FUNCTION IF EXISTS mult (INTEGER, INTEGER)");
+        stmt.execute("DROP FUNCTION IF EXISTS mult ()");
         stmt.execute(
                 """
-                                    CREATE FUNCTION mult(i INTEGER, j INTEGER) RETURNS TABLE(i INTEGER, j INTEGER, val DOUBLE PRECISION)
-                                    LANGUAGE SQL
+                                    CREATE FUNCTION mult() RETURNS TABLE(i INTEGER, j INTEGER, val DOUBLE PRECISION)
+                                    LANGUAGE SQL STABLE
                                     AS $$
                                     SELECT A.i, B.j, SUM(A.val * B.val)
                                     FROM A,B
