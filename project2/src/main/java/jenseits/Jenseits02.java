@@ -97,7 +97,6 @@ public class Jenseits02 implements AutoCloseable {
      * Approach1: Creates a DBMS function for the multiplication of two matrix
      * tables
      */
-    // TODO: better option?
     private void createDBMSMultFunction(String matrixName1, String matrixName2) throws Exception {
         Statement stmt = conn.createStatement();
         stmt.execute("DROP FUNCTION IF EXISTS mult ()");
@@ -107,13 +106,12 @@ public class Jenseits02 implements AutoCloseable {
                                     RETURNS TABLE(i INTEGER, j INTEGER, val DOUBLE PRECISION)
                                     LANGUAGE SQL STABLE
                                     AS $$
-                                    SELECT %s.i, %s.j, SUM(%s.val * %s.val)
-                                    FROM %s, %s
-                                    WHERE %s.j = %s.i
-                                    GROUP BY %s.i, %s.j
+                                    SELECT A.i, B.j, SUM(A.val * B.val)
+                                    FROM %s AS A, %s AS B
+                                    WHERE A.j = B.i
+                                    GROUP BY A.i, B.j
                                     $$
-                        """, matrixName1, matrixName2, matrixName1, matrixName2, matrixName1, matrixName2, matrixName1,
-                matrixName2, matrixName1, matrixName2));
+                        """, matrixName1, matrixName2));
     }
 
     public static void show_toy_example() {
