@@ -11,6 +11,7 @@ public class Jenseits02 implements AutoCloseable {
     private static Logger logger;
 
     public static void main(String[] args) throws Exception {
+        show_toy_example()
         try (var obj = new Jenseits02()) {
             var pair = generate(4, 0.5);
             var A = pair.getFirst();
@@ -35,6 +36,19 @@ public class Jenseits02 implements AutoCloseable {
     @Override
     public void close() throws Exception {
         conn.close();
+    }
+
+    public static void show_toy_example() {
+        var pair = generate(4, 0.5);
+        var A = pair.getFirst();
+        var B = pair.getSecond();
+
+        printMatrix(A);
+        printMatrix(B);
+
+        var C = matrixMultiply(A, B);
+        printMatrix(C);
+
     }
 
     /*
@@ -80,6 +94,7 @@ public class Jenseits02 implements AutoCloseable {
     //
     // I have checked this against a matrix calculator and it seems almost correct.
     // I think the minor deviation comes from floating point.
+    // NOTE: add guard for dimension mismatch between rows of A and columns of B?
     public static double[][] matrixMultiply(double[][] A, double[][] B) {
         var result = new double[A.length][B[0].length];
         for (int i = 0; i < A.length; i++) {
