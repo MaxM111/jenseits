@@ -12,8 +12,6 @@ import jenseits.setup.Pair;
 
 public class Jenseits02 implements AutoCloseable {
 
-    private static Logger logger;
-
     public static void main(String[] args) throws Exception {
         System.out.println("Toy Example:");
         show_toy_example();
