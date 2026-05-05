@@ -16,6 +16,9 @@ public class Jenseits02 implements AutoCloseable {
         try (var obj = new Jenseits02()) {
             System.out.println("Toy Example:");
             obj.show_toy_example();
+            obj.createDBMSMultFunction("toy_A", "toy_B");
+            System.out.println("Result C: ");
+            printMatrix(obj.calculateMatrixMultiplication(4));
 
             System.out.println("DB Example:");
             int length = 4;
