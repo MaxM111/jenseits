@@ -12,11 +12,12 @@ import jenseits.setup.Pair;
 public class Jenseits02 implements AutoCloseable {
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Toy Example:");
-        show_toy_example();
 
-        System.out.println("DB Example:");
         try (var obj = new Jenseits02()) {
+            System.out.println("Toy Example:");
+            obj.show_toy_example();
+
+            System.out.println("DB Example:");
             int length = 4;
             var pair = generate(length, 0.5);
             System.out.println("Matrix A: ");
@@ -80,7 +81,7 @@ public class Jenseits02 implements AutoCloseable {
     }
 
     // TODO: import
-    public static void show_toy_example() {
+    public void show_toy_example() throws Exception {
         // l := 4
         // l - 1 x l
         double[][] A = {
@@ -96,6 +97,9 @@ public class Jenseits02 implements AutoCloseable {
                 { 5, 5, 0 },
                 { 2, 0, 3 }
         };
+
+        importMatrix("toy_A", A);
+        importMatrix("toy_B", B);
 
         double[][] manualC = {
                 { 0, 1, 0 },
