@@ -46,8 +46,6 @@ public class Jenseits02 implements AutoCloseable {
         conn.close();
     }
 
-    // TODO: Find best option to dertmine matrix shape. matrix shape is hardcoded
-    // for now.
     private double[][] calculateMatrixMultiplication(int length)
             throws Exception {
         Statement stmt = conn.createStatement();
@@ -83,7 +81,6 @@ public class Jenseits02 implements AutoCloseable {
                         """, matrixName1, matrixName2));
     }
 
-    // TODO: import
     public void show_toy_example() throws Exception {
         // l := 4
         // l - 1 x l
