@@ -1,14 +1,12 @@
 package jenseits;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.util.Arrays;
 import java.util.Random;
 import java.sql.Statement;
 import java.sql.ResultSet;
 
 import jenseits.setup.*;
-import jenseits.util.*;
 import jenseits.setup.Pair;
 
 public class Jenseits02 implements AutoCloseable {
@@ -19,9 +17,6 @@ public class Jenseits02 implements AutoCloseable {
 
         System.out.println("DB Example:");
         try (var obj = new Jenseits02()) {
-            obj.createMatrixTable("A");
-            obj.createMatrixTable("B");
-
             int length = 4;
             var pair = generate(length, 0.5);
             System.out.println("Matrix A: ");
@@ -29,8 +24,9 @@ public class Jenseits02 implements AutoCloseable {
             System.out.println("Matrix B: ");
             printMatrix(pair.getSecond());
 
-            obj.fillMatrixTable("A", pair.getFirst());
-            obj.fillMatrixTable("B", pair.getSecond());
+            obj.importMatrix("A", pair.getFirst());
+            obj.importMatrix("B", pair.getSecond());
+
             obj.createDBMSMultFunction("A", "B");
             System.out.println("Result C: ");
             printMatrix(obj.calculateMatrixMultiplication(length));
@@ -47,37 +43,6 @@ public class Jenseits02 implements AutoCloseable {
     @Override
     public void close() throws Exception {
         conn.close();
-    }
-
-    /*
-     * Creates two tables to store two matrices as described in
-     * "Effiziente Matrixmultiplikationen"
-     * NOTE: could use numeric datatype. Numeric datatype precision can be adjusted
-     * up to 16383 digits after decimal point. Requires java BigDecimal.
-     * https://www.postgresql.org/docs/current/datatype-numeric.html
-     */
-    private void createMatrixTable(String name) throws Exception {
-        Statement stmt = conn.createStatement();
-        stmt.execute(String.format("DROP TABLE IF EXISTS %s", name));
-        stmt.execute(String.format("CREATE TABLE %s (i INTEGER, j INTEGER, val DOUBLE PRECISION)", name));
-    }
-
-    /*
-     * Stores a matrix in the designated DB table
-     */
-    private void fillMatrixTable(String tableName, double[][] m) throws Exception {
-        PreparedStatement pstmt1 = conn.prepareStatement(String.format("INSERT INTO %s VALUES (?,?,?)", tableName));
-        for (int i = 0; i < m.length; i++) {
-            for (int j = 0; j < m[i].length; j++) {
-                if (m[i][j] == 0) {
-                    continue;
-                }
-                pstmt1.setInt(1, i);
-                pstmt1.setInt(2, j);
-                pstmt1.setDouble(3, m[i][j]);
-                pstmt1.execute();
-            }
-        }
     }
 
     // TODO: Find best option to dertmine matrix shape. matrix shape is hardcoded
@@ -114,6 +79,7 @@ public class Jenseits02 implements AutoCloseable {
                         """, matrixName1, matrixName2));
     }
 
+    // TODO: import
     public static void show_toy_example() {
         // l := 4
         // l - 1 x l
@@ -204,33 +170,22 @@ public class Jenseits02 implements AutoCloseable {
     public record Matrix(String name, double[][] data) {
     }
 
-    public void importMatrices(double[][] A, double[][] B) throws Exception {
+    public void importMatrix(String name, double[][] matrix) throws Exception {
         var statement = conn.createStatement();
-        statement.execute("DROP TABLE IF EXISTS A, B");
+        statement.execute("DROP TABLE IF EXISTS " + name);
 
-        var createStmt = "CREATE TABLE %s (i INTEGER, j INTEGER, val DOUBLE PRECISION)";
-        var insertStmt = "INSERT INTO %s VALUES (?, ?, ?)";
+        statement.execute(String.format("CREATE TABLE %s (i INTEGER, j INTEGER, val DOUBLE PRECISION)", name));
 
-        var matrices = new Matrix[] {
-                new Matrix("A", A),
-                new Matrix("B", B)
-        };
+        var insertStmt = conn.prepareStatement(String.format("INSERT INTO %s VALUES (?, ?, ?)", name));
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                double val = matrix[i][j];
 
-        for (Matrix matrix : matrices) {
-            String table = matrix.name;
-            statement.execute(String.format(createStmt, table));
-
-            var preparedStatementA = conn.prepareStatement(String.format(insertStmt, table));
-            for (int i = 0; i < matrix.data.length; i++) {
-                for (int j = 0; j < matrix.data[0].length; j++) {
-                    double val = matrix.data[i][j];
-
-                    if (val != 0) {
-                        preparedStatementA.setInt(1, i);
-                        preparedStatementA.setInt(2, j);
-                        preparedStatementA.setDouble(3, val);
-                        preparedStatementA.execute();
-                    }
+                if (val != 0) {
+                    insertStmt.setInt(1, i);
+                    insertStmt.setInt(2, j);
+                    insertStmt.setDouble(3, val);
+                    insertStmt.execute();
                 }
             }
         }
