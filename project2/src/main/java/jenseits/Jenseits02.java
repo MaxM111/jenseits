@@ -5,8 +5,6 @@ import java.sql.PreparedStatement;
 import java.util.Random;
 import java.sql.Statement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.lang.String;
 
 import jenseits.setup.*;
 import jenseits.util.*;
