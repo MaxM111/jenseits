@@ -180,11 +180,10 @@ public class Jenseits02 implements AutoCloseable {
     }
 
     // Reference: https://en.wikipedia.org/wiki/Matrix_multiplication
-    //
-    // I have checked this against a matrix calculator and it seems almost correct.
-    // I think the minor deviation comes from floating point.
-    // NOTE: add guard for dimension mismatch between rows of A and columns of B?
     public static double[][] matrixMultiply(double[][] A, double[][] B) {
+        assert A.length > 0 && B.length > 0;
+        assert A[0].length == B.length;
+
         var result = new double[A.length][B[0].length];
         for (int i = 0; i < A.length; i++) {
             for (int j = 0; j < B[0].length; j++) {
