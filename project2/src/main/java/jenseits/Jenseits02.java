@@ -14,25 +14,25 @@ public class Jenseits02 implements AutoCloseable {
     public static void main(String[] args) throws Exception {
 
         try (var obj = new Jenseits02()) {
-            System.out.println("Toy Example:");
+            IO.println("Toy Example:");
             obj.show_toy_example();
             obj.createDBMSMultFunction("toy_A", "toy_B");
-            System.out.println("Result C: ");
+            IO.println("Result C: ");
             printMatrix(obj.calculateMatrixMultiplication(4));
 
-            System.out.println("DB Example:");
+            IO.println("DB Example:");
             int length = 4;
             var pair = generate(length, 0.5);
-            System.out.println("Matrix A: ");
+            IO.println("Matrix A: ");
             printMatrix(pair.getFirst());
-            System.out.println("Matrix B: ");
+            IO.println("Matrix B: ");
             printMatrix(pair.getSecond());
 
             obj.importMatrix("A", pair.getFirst());
             obj.importMatrix("B", pair.getSecond());
 
             obj.createDBMSMultFunction("A", "B");
-            System.out.println("Result C: ");
+            IO.println("Result C: ");
             printMatrix(obj.calculateMatrixMultiplication(length));
         }
     }
