@@ -54,7 +54,10 @@ public class Jenseits02 implements AutoCloseable {
         double[][] resultMatrix = new double[length - 1][length - 1];
         ResultSet rs = stmt.executeQuery("SELECT * FROM mult()");
         while (rs.next()) {
-            resultMatrix[rs.getInt(1)][rs.getInt(2)] = rs.getDouble(3);
+            int i = rs.getInt(1);
+            int j = rs.getInt(2);
+            double val = rs.getDouble(3);
+            resultMatrix[i][j] = val;
         }
         return resultMatrix;
     }
