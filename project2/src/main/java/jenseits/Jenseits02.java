@@ -2,6 +2,7 @@ package jenseits;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.util.Arrays;
 import java.util.Random;
 import java.sql.Statement;
 import java.sql.ResultSet;
@@ -15,16 +16,19 @@ public class Jenseits02 implements AutoCloseable {
     public static void main(String[] args) throws Exception {
         System.out.println("Toy Example:");
         show_toy_example();
+
         System.out.println("DB Example:");
         try (var obj = new Jenseits02()) {
             obj.createMatrixTable("A");
             obj.createMatrixTable("B");
+
             int length = 4;
             var pair = generate(length, 0.5);
             System.out.println("Matrix A: ");
             printMatrix(pair.getFirst());
             System.out.println("Matrix B: ");
             printMatrix(pair.getSecond());
+
             obj.fillMatrixTable("A", pair.getFirst());
             obj.fillMatrixTable("B", pair.getSecond());
             obj.createDBMSMultFunction("A", "B");
@@ -111,15 +115,29 @@ public class Jenseits02 implements AutoCloseable {
     }
 
     public static void show_toy_example() {
-        var pair = generate(4, 0.5);
-        var A = pair.getFirst();
-        var B = pair.getSecond();
+        // l := 4
+        // l - 1 x l
+        double[][] A = {
+                { 1, 0, 0, 0 },
+                { 0, 3, 2, 4 },
+                { 5, 3, 1, 0 },
+        };
 
-        printMatrix(A);
-        printMatrix(B);
+        // l x l - 1
+        double[][] B = {
+                { 0, 1, 0 },
+                { 3, 4, 4 },
+                { 5, 5, 0 },
+                { 2, 0, 3 }
+        };
 
-        var C = matrixMultiply(A, B);
-        printMatrix(C);
+        double[][] manualC = {
+                { 0, 1, 0 },
+                { 27, 22, 24 },
+                { 14, 22, 12 },
+        };
+        double[][] C = matrixMultiply(A, B);
+        assert Arrays.equals(manualC, C);
     }
 
     /*
