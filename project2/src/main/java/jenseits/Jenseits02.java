@@ -34,6 +34,9 @@ public class Jenseits02 implements AutoCloseable {
             obj.createDBMSMultFunction("A", "B");
             IO.println("Result C: ");
             printMatrix(obj.calculateMatrixMultiplication(length));
+
+            IO.println("Approach 2: ");
+            obj.executeApproach2();
         }
     }
 
@@ -111,6 +114,84 @@ public class Jenseits02 implements AutoCloseable {
         };
         double[][] C = matrixMultiply(A, B);
         assert Arrays.equals(manualC, C);
+    }
+
+    /*
+     * Approach 2
+     */
+    private void executeApproach2() throws Exception {
+        String name1 = "A2";
+        String name2 = "B2";
+        Statement stmt = conn.createStatement();
+
+        // define dotproduct function
+        stmt.execute("DROP FUNCTION IF EXISTS dot_product (DOUBLE PRECISION[], DOUBLE PRECISION[])");
+        stmt.execute("""
+                CREATE FUNCTION dot_product (v1 DOUBLE PRECISION[], v2 DOUBLE PRECISION[])
+                RETURNS DOUBLE PRECISION
+                LANGUAGE SQL
+                AS $$
+                SELECT SUM(a*b)
+                FROM unnest(v1, v2) as t(a,b)
+                $$
+                """);
+
+        int length = 4;
+        var pair = generate(length, 0.5);
+        importMatrixVector(name1, pair.getFirst(), true);
+        importMatrixVector(name2, pair.getSecond(), false);
+
+        ResultSet rs = stmt.executeQuery(String.format("""
+                SELECT
+                    A.i,
+                    B.j,
+                    dot_product(A.row,B.col) AS val
+                FROM %s AS A, %s AS B
+                """, name1, name2));
+        double[][] resultMatrix = new double[length - 1][length - 1];
+        while (rs.next()) {
+            int i = rs.getInt(1);
+            int j = rs.getInt(2);
+            double val = rs.getDouble(3);
+            resultMatrix[i][j] = val;
+        }
+        printMatrix(resultMatrix);
+    }
+
+    public void importMatrixVector(String name, double[][] matrix, boolean insertAsRows) throws Exception {
+        var statement = conn.createStatement();
+        statement.execute("DROP TABLE IF EXISTS " + name);
+        if (!insertAsRows) {
+            statement.execute(String.format("CREATE TABLE %s (j INTEGER, col DOUBLE PRECISION[])", name));
+        } else {
+            statement.execute(String.format("CREATE TABLE %s (i INTEGER, row DOUBLE PRECISION[])", name));
+        }
+
+        var insertStmt = conn.prepareStatement(String.format("INSERT INTO %s VALUES (?, ?)", name));
+        if (!insertAsRows) {
+            double[][] matrixCols = new double[matrix[0].length][matrix.length];
+            for (int i = 0; i < matrix.length; i++) {
+                for (int j = 0; j < matrix[0].length; j++) {
+                    matrixCols[j][i] = matrix[i][j];
+                }
+            }
+            for (int j = 0; j < matrixCols.length; j++) {
+                var col = Arrays.stream(matrixCols[j]).boxed().toArray(Double[]::new);
+                var sqlArray = conn.createArrayOf("FLOAT8", col);
+                insertStmt.setInt(1, j);
+                insertStmt.setArray(2, sqlArray);
+                insertStmt.execute();
+            }
+        } else {
+            for (int i = 0; i < matrix.length; i++) {
+                var row = Arrays.stream(matrix[i]).boxed().toArray(Double[]::new);
+                var sqlArray = conn.createArrayOf("FLOAT8", row);
+                insertStmt.setInt(1, i);
+                insertStmt.setArray(2, sqlArray);
+                insertStmt.execute();
+            }
+        }
+
     }
 
     /*
