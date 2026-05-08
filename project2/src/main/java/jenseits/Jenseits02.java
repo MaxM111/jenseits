@@ -32,11 +32,11 @@ public class Jenseits02 implements AutoCloseable {
             obj.importMatrix("B", pair.getSecond());
 
             obj.createDBMSMultFunction("A", "B");
-            IO.println("Result C: ");
+            IO.println("Approach 1 Result: ");
             printMatrix(obj.calculateMatrixMultiplication(length));
 
-            IO.println("Approach 2: ");
-            obj.executeApproach2();
+            IO.println("Approach 2 Result: ");
+            obj.executeApproach2(pair);
         }
     }
 
@@ -119,7 +119,7 @@ public class Jenseits02 implements AutoCloseable {
     /*
      * Approach 2
      */
-    private void executeApproach2() throws Exception {
+    private void executeApproach2(Pair<double[][], double[][]> pair) throws Exception {
         String name1 = "A2";
         String name2 = "B2";
         Statement stmt = conn.createStatement();
@@ -137,7 +137,6 @@ public class Jenseits02 implements AutoCloseable {
                 """);
 
         int length = 4;
-        var pair = generate(length, 0.5);
         importMatrixVector(name1, pair.getFirst(), true);
         importMatrixVector(name2, pair.getSecond(), false);
 
