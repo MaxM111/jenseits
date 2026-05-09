@@ -8,17 +8,19 @@ import java.sql.ResultSet;
 
 import jenseits.setup.*;
 import jenseits.setup.Pair;
+import jenseits.util.Logger;
 
 public class Jenseits02 implements AutoCloseable {
+    private Logger logger;
 
     public static void main(String[] args) throws Exception {
-
         try (var obj = new Jenseits02()) {
+            obj.logger = new Logger("logs", "log.csv");
             IO.println("Toy Example:");
             obj.show_toy_example();
             obj.createDBMSMultFunction("toy_A", "toy_B");
             IO.println("Result C: ");
-            printMatrix(obj.calculateMatrixMultiplication(4));
+            printMatrix(obj.calculateMatrixMultApproach1(4));
 
             IO.println("DB Example:");
             int length = 4;
@@ -30,13 +32,15 @@ public class Jenseits02 implements AutoCloseable {
 
             obj.importMatrix("A", pair.getFirst());
             obj.importMatrix("B", pair.getSecond());
+            obj.importMatrixVector("A2", pair.getFirst(), true);
+            obj.importMatrixVector("B2", pair.getSecond(), false);
 
             obj.createDBMSMultFunction("A", "B");
             IO.println("Approach 1 Result: ");
-            printMatrix(obj.calculateMatrixMultiplication(length));
+            printMatrix(obj.calculateMatrixMultApproach1(length));
 
             IO.println("Approach 2 Result: ");
-            obj.executeApproach2(pair);
+            printMatrix(obj.calculateMatrixMultApproach2("A2", "B2", length));
         }
     }
 
@@ -52,7 +56,7 @@ public class Jenseits02 implements AutoCloseable {
         conn.close();
     }
 
-    private double[][] calculateMatrixMultiplication(int length)
+    private double[][] calculateMatrixMultApproach1(int length)
             throws Exception {
         Statement stmt = conn.createStatement();
         double[][] resultMatrix = new double[length - 1][length - 1];
@@ -119,9 +123,7 @@ public class Jenseits02 implements AutoCloseable {
     /*
      * Approach 2
      */
-    private void executeApproach2(Pair<double[][], double[][]> pair) throws Exception {
-        String name1 = "A2";
-        String name2 = "B2";
+    private double[][] calculateMatrixMultApproach2(String name1, String name2, int length) throws Exception {
         Statement stmt = conn.createStatement();
 
         // define dotproduct function
@@ -135,10 +137,6 @@ public class Jenseits02 implements AutoCloseable {
                 FROM unnest(v1, v2) as t(a,b)
                 $$
                 """);
-
-        int length = 4;
-        importMatrixVector(name1, pair.getFirst(), true);
-        importMatrixVector(name2, pair.getSecond(), false);
 
         ResultSet rs = stmt.executeQuery(String.format("""
                 SELECT
@@ -154,7 +152,7 @@ public class Jenseits02 implements AutoCloseable {
             double val = rs.getDouble(3);
             resultMatrix[i][j] = val;
         }
-        printMatrix(resultMatrix);
+        return resultMatrix;
     }
 
     public void importMatrixVector(String name, double[][] matrix, boolean insertAsRows) throws Exception {
