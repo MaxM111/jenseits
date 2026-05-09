@@ -7,6 +7,7 @@ import java.sql.Statement;
 import java.sql.ResultSet;
 
 import jenseits.setup.*;
+import static jenseits.setup.Utils.timeIt;
 import jenseits.setup.Pair;
 import jenseits.util.Logger;
 
@@ -15,37 +16,7 @@ public class Jenseits02 implements AutoCloseable {
 
     public static void main(String[] args) throws Exception {
         try (var obj = new Jenseits02()) {
-            obj.logger = new Logger("logs", "log.csv");
-            IO.println("Toy Example:");
-            obj.show_toy_example();
-            obj.createDBMSMultFunction("toy_A", "toy_B");
-            IO.println("Result C: ");
-            printMatrix(obj.calculateMatrixMultApproach1(4));
-
-            IO.println("DB Example:");
-            int length = 4;
-            var pair = generate(length, 0.5);
-            var A = pair.getFirst();
-            var B = pair.getSecond();
-            IO.println("Matrix A: ");
-            printMatrix(A);
-            IO.println("Matrix B: ");
-            printMatrix(B);
-
-            obj.importMatrix("A", A);
-            obj.importMatrix("B", B);
-            obj.importMatrixVector("A2", A, true);
-            obj.importMatrixVector("B2", B, false);
-
-            obj.createDBMSMultFunction("A", "B");
-            obj.createDBMSDotProductFunction();
-
-            IO.println("Approach 0 Result: ");
-            printMatrix(obj.calculateMatrixMultApproach0(A, B));
-            IO.println("Approach 1 Result: ");
-            printMatrix(obj.calculateMatrixMultApproach1(length));
-            IO.println("Approach 2 Result: ");
-            printMatrix(obj.calculateMatrixMultApproach2("A2", "B2", length));
+            obj.benchmark();
         }
     }
 
@@ -54,11 +25,46 @@ public class Jenseits02 implements AutoCloseable {
     public Jenseits02() throws Exception {
         conn = DB.getConnection(Database.POSTGRESQL);
         conn.setAutoCommit(true);
+        logger = new Logger("logs", "log.csv");
     }
 
     @Override
     public void close() throws Exception {
         conn.close();
+    }
+
+    private void benchmark() throws Exception {
+        Statement stmt = conn.createStatement();
+        int[] lengthVals = new int[] { 8, 16, 32, 64 };
+        double[] sparsityVals = new double[] { 1.0 - 1.0 / 2.0, 1.0 - 1.0 / 4.0,
+                1.0 - (1.0 / 16.0) };
+        logger.log("Approach", "matrixLength", "sparsity", "elapsedTime");
+        IO.println("Beginning Benchmark.");
+        for (var length : lengthVals) {
+            for (var sparsity : sparsityVals) {
+                IO.println(String.format("Benchmarking: MatrixLength %d | Sparsity %.2f", length, sparsity));
+                var pair = generate(length, sparsity);
+                var A = pair.getFirst();
+                var B = pair.getSecond();
+
+                importMatrix("A", A);
+                importMatrix("B", B);
+                importMatrixVector("A_vec", A, true);
+                importMatrixVector("B_vec", B, false);
+
+                createDBMSMultFunction("A", "B");
+                createDBMSDotProductFunction();
+
+                double time1 = timeIt("", () -> calculateMatrixMultApproach0(A, B), false);
+                logger.log("approach0", String.valueOf(length), String.valueOf(sparsity), String.valueOf(time1));
+                double time2 = timeIt("", () -> calculateMatrixMultApproach1(length), false);
+                logger.log("approach1", String.valueOf(length), String.valueOf(sparsity), String.valueOf(time2));
+                double time3 = timeIt("", () -> calculateMatrixMultApproach2("A_vec", "B_vec", length), false);
+                logger.log("approach2", String.valueOf(length), String.valueOf(sparsity), String.valueOf(time3));
+            }
+        }
+        logger.flush();
+        IO.println("Finished Benchmark.");
     }
 
     private double[][] calculateMatrixMultApproach1(int length)
@@ -125,8 +131,43 @@ public class Jenseits02 implements AutoCloseable {
         assert Arrays.equals(manualC, C);
     }
 
+    public static void show_phase1() throws Exception {
+        try (var obj = new Jenseits02()) {
+            IO.println("Toy Example:");
+            obj.show_toy_example();
+            obj.createDBMSMultFunction("toy_A", "toy_B");
+            IO.println("Result C: ");
+            printMatrix(obj.calculateMatrixMultApproach1(4));
+
+            IO.println("DB Example:");
+            int length = 4;
+            var pair = generate(length, 0.5);
+            var A = pair.getFirst();
+            var B = pair.getSecond();
+            IO.println("Matrix A: ");
+            printMatrix(A);
+            IO.println("Matrix B: ");
+            printMatrix(B);
+
+            obj.importMatrix("A", A);
+            obj.importMatrix("B", B);
+            obj.importMatrixVector("A_vec", A, true);
+            obj.importMatrixVector("B_vec", B, false);
+
+            obj.createDBMSMultFunction("A", "B");
+            obj.createDBMSDotProductFunction();
+
+            IO.println("Approach 0 Result: ");
+            printMatrix(obj.calculateMatrixMultApproach0(A, B));
+            IO.println("Approach 1 Result: ");
+            printMatrix(obj.calculateMatrixMultApproach1(length));
+            IO.println("Approach 2 Result: ");
+            printMatrix(obj.calculateMatrixMultApproach2("A_vec", "B_vec", length));
+        }
+    }
+
     /*
-     * Approach 2:
+     * Approach 2: Matrix Multiplication
      */
     private double[][] calculateMatrixMultApproach2(String name1, String name2, int length) throws Exception {
         Statement stmt = conn.createStatement();
@@ -167,9 +208,9 @@ public class Jenseits02 implements AutoCloseable {
     }
 
     /*
-     * Approach2: Creates matrix tables as either (i,row) or (j,column) as schema
+     * Creates matrix tables as either (i,row) or (j,column) as schema
      * and
-     * imports values
+     * imports values for approach 2
      */
     private void importMatrixVector(String name, double[][] matrix, boolean insertAsRows) throws Exception {
         var statement = conn.createStatement();
