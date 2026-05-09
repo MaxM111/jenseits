@@ -25,20 +25,25 @@ public class Jenseits02 implements AutoCloseable {
             IO.println("DB Example:");
             int length = 4;
             var pair = generate(length, 0.5);
+            var A = pair.getFirst();
+            var B = pair.getSecond();
             IO.println("Matrix A: ");
-            printMatrix(pair.getFirst());
+            printMatrix(A);
             IO.println("Matrix B: ");
-            printMatrix(pair.getSecond());
+            printMatrix(B);
 
-            obj.importMatrix("A", pair.getFirst());
-            obj.importMatrix("B", pair.getSecond());
-            obj.importMatrixVector("A2", pair.getFirst(), true);
-            obj.importMatrixVector("B2", pair.getSecond(), false);
+            obj.importMatrix("A", A);
+            obj.importMatrix("B", B);
+            obj.importMatrixVector("A2", A, true);
+            obj.importMatrixVector("B2", B, false);
 
             obj.createDBMSMultFunction("A", "B");
+            obj.createDBMSDotProductFunction();
+
+            IO.println("Approach 0 Result: ");
+            printMatrix(obj.calculateMatrixMultApproach0(A, B));
             IO.println("Approach 1 Result: ");
             printMatrix(obj.calculateMatrixMultApproach1(length));
-
             IO.println("Approach 2 Result: ");
             printMatrix(obj.calculateMatrixMultApproach2("A2", "B2", length));
         }
@@ -116,28 +121,15 @@ public class Jenseits02 implements AutoCloseable {
                 { 27, 22, 24 },
                 { 14, 22, 12 },
         };
-        double[][] C = matrixMultiply(A, B);
+        double[][] C = calculateMatrixMultApproach0(A, B);
         assert Arrays.equals(manualC, C);
     }
 
     /*
-     * Approach 2
+     * Approach 2:
      */
     private double[][] calculateMatrixMultApproach2(String name1, String name2, int length) throws Exception {
         Statement stmt = conn.createStatement();
-
-        // define dotproduct function
-        stmt.execute("DROP FUNCTION IF EXISTS dot_product (DOUBLE PRECISION[], DOUBLE PRECISION[])");
-        stmt.execute("""
-                CREATE FUNCTION dot_product (v1 DOUBLE PRECISION[], v2 DOUBLE PRECISION[])
-                RETURNS DOUBLE PRECISION
-                LANGUAGE SQL
-                AS $$
-                SELECT SUM(a*b)
-                FROM unnest(v1, v2) as t(a,b)
-                $$
-                """);
-
         ResultSet rs = stmt.executeQuery(String.format("""
                 SELECT
                     A.i,
@@ -155,7 +147,31 @@ public class Jenseits02 implements AutoCloseable {
         return resultMatrix;
     }
 
-    public void importMatrixVector(String name, double[][] matrix, boolean insertAsRows) throws Exception {
+    /*
+     * Create the dot_product function for approach 2
+     * The function takes a row array and a column array as input
+     */
+    private void createDBMSDotProductFunction() throws Exception {
+        Statement stmt = conn.createStatement();
+        // define dotproduct function
+        stmt.execute("DROP FUNCTION IF EXISTS dot_product (DOUBLE PRECISION[], DOUBLE PRECISION[])");
+        stmt.execute("""
+                CREATE FUNCTION dot_product (v1 DOUBLE PRECISION[], v2 DOUBLE PRECISION[])
+                RETURNS DOUBLE PRECISION
+                LANGUAGE SQL
+                AS $$
+                SELECT SUM(a*b)
+                FROM unnest(v1, v2) as t(a,b)
+                $$
+                """);
+    }
+
+    /*
+     * Approach2: Creates matrix tables as either (i,row) or (j,column) as schema
+     * and
+     * imports values
+     */
+    private void importMatrixVector(String name, double[][] matrix, boolean insertAsRows) throws Exception {
         var statement = conn.createStatement();
         statement.execute("DROP TABLE IF EXISTS " + name);
         if (!insertAsRows) {
@@ -230,8 +246,10 @@ public class Jenseits02 implements AutoCloseable {
         IO.println();
     }
 
-    // Reference: https://en.wikipedia.org/wiki/Matrix_multiplication
-    public static double[][] matrixMultiply(double[][] A, double[][] B) {
+    /*
+     * Approach0: Reference: https://en.wikipedia.org/wiki/Matrix_multiplication
+     */
+    public static double[][] calculateMatrixMultApproach0(double[][] A, double[][] B) {
         assert A.length > 0 && B.length > 0;
         assert A[0].length == B.length;
 
