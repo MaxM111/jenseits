@@ -10,4 +10,18 @@ public class Utils {
             System.out.println(String.format("%s: %.2f ms", label, result));
         return result;
     }
+
+    public static long countExecutions(ThrowingRunnable multiplicationVariant, int timeUnitInSeconds) throws Exception {
+        long timeUnitInNanos = timeUnitInSeconds * 1_000_000_000L;
+        long startTime = System.nanoTime();
+        long counter = 0;
+        while (System.nanoTime() - startTime < timeUnitInNanos) {
+            multiplicationVariant.run();
+            counter++;
+        }
+        var timePassed = System.nanoTime() - startTime;
+        IO.println((double) timePassed / 1_000_000_000);
+        return counter;
+    }
+
 }

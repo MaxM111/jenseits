@@ -7,7 +7,8 @@ import java.sql.Statement;
 import java.sql.ResultSet;
 
 import jenseits.setup.*;
-import static jenseits.setup.Utils.timeIt;
+
+import static jenseits.setup.Utils.countExecutions;
 import jenseits.setup.Pair;
 import jenseits.util.Logger;
 
@@ -34,9 +35,11 @@ public class Jenseits02 implements AutoCloseable {
     }
 
     private void benchmark() throws Exception {
-        int[] lengthVals = new int[] { Math.powExact(2, 3), Math.powExact(2, 10), Math.powExact(2, 15),
-                Math.powExact(2, 20) };
+        int[] lengthVals = new int[] { Math.powExact(2, 3), Math.powExact(2, 5), Math.powExact(2, 7),
+                Math.powExact(2, 9) };
         double[] sparsityVals = new double[] { 0.2, 0.4, 0.6, 0.8 };
+
+        int timeUnitInSeconds = 3 * 60;
 
         logger.log("Approach", "matrixLength", "sparsity", "elapsedTime");
         IO.println("Beginning Benchmark.");
@@ -56,12 +59,15 @@ public class Jenseits02 implements AutoCloseable {
                 createDBMSMultFunction("A", "B");
                 createDBMSDotProductFunction();
 
-                double time1 = timeIt("", () -> calculateMatrixMultApproach0(A, B), false);
-                logger.log("approach0", String.valueOf(length), String.valueOf(sparsity), String.valueOf(time1));
-                double time2 = timeIt("", () -> calculateMatrixMultApproach1(length), false);
-                logger.log("approach1", String.valueOf(length), String.valueOf(sparsity), String.valueOf(time2));
-                double time3 = timeIt("", () -> calculateMatrixMultApproach2("A_vec", "B_vec", length), false);
-                logger.log("approach2", String.valueOf(length), String.valueOf(sparsity), String.valueOf(time3));
+                long count0 = countExecutions(() -> calculateMatrixMultApproach0(A, B), timeUnitInSeconds);
+                logger.log("approach0", String.valueOf(length), String.valueOf(sparsity), String.valueOf(count0));
+
+                long count1 = countExecutions(() -> calculateMatrixMultApproach1(length), timeUnitInSeconds);
+                logger.log("approach1", String.valueOf(length), String.valueOf(sparsity), String.valueOf(count1));
+
+                long count2 = countExecutions(() -> calculateMatrixMultApproach2("A_vec", "B_vec", length),
+                        timeUnitInSeconds);
+                logger.log("approach2", String.valueOf(length), String.valueOf(sparsity), String.valueOf(count2));
             }
         }
         logger.flush();
