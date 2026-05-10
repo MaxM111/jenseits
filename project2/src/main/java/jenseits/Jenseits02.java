@@ -34,7 +34,6 @@ public class Jenseits02 implements AutoCloseable {
     }
 
     private void benchmark() throws Exception {
-        Statement stmt = conn.createStatement();
         int[] lengthVals = new int[] { 8, 16, 32, 64 };
         double[] sparsityVals = new double[] { 1.0 - 1.0 / 2.0, 1.0 - 1.0 / 4.0,
                 1.0 - (1.0 / 16.0) };
@@ -158,7 +157,7 @@ public class Jenseits02 implements AutoCloseable {
             obj.createDBMSDotProductFunction();
 
             IO.println("Approach 0 Result: ");
-            printMatrix(obj.calculateMatrixMultApproach0(A, B));
+            printMatrix(calculateMatrixMultApproach0(A, B));
             IO.println("Approach 1 Result: ");
             printMatrix(obj.calculateMatrixMultApproach1(length));
             IO.println("Approach 2 Result: ");
