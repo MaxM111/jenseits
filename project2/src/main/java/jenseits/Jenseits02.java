@@ -34,11 +34,13 @@ public class Jenseits02 implements AutoCloseable {
     }
 
     private void benchmark() throws Exception {
-        int[] lengthVals = new int[] { 8, 16, 32, 64 };
-        double[] sparsityVals = new double[] { 1.0 - 1.0 / 2.0, 1.0 - 1.0 / 4.0,
-                1.0 - (1.0 / 16.0) };
+        int[] lengthVals = new int[] { Math.powExact(2, 3), Math.powExact(2, 10), Math.powExact(2, 15),
+                Math.powExact(2, 20) };
+        double[] sparsityVals = new double[] { 0.2, 0.4, 0.6, 0.8 };
+
         logger.log("Approach", "matrixLength", "sparsity", "elapsedTime");
         IO.println("Beginning Benchmark.");
+
         for (var length : lengthVals) {
             for (var sparsity : sparsityVals) {
                 IO.println(String.format("Benchmarking: MatrixLength %d | Sparsity %.2f", length, sparsity));
