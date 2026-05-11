@@ -211,7 +211,7 @@ ApplicationWindow {
 
                     TabButton {
                         id: queryTab
-                        text: "Query Count"
+                        text: "Computations/min"
                         contentItem: Text {
                             text: queryTab.text
                             color: plotTabs.currentIndex === 0 ? "white" : root.ink
@@ -222,23 +222,6 @@ ApplicationWindow {
                         }
                         background: Rectangle {
                             color: plotTabs.currentIndex === 0 ? root.ink : "transparent"
-                            radius: 7
-                        }
-                    }
-
-                    TabButton {
-                        id: sizeTab
-                        text: "Table Size"
-                        contentItem: Text {
-                            text: sizeTab.text
-                            color: plotTabs.currentIndex === 1 ? "white" : root.ink
-                            font.pixelSize: 14
-                            font.weight: Font.DemiBold
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        background: Rectangle {
-                            color: plotTabs.currentIndex === 1 ? root.ink : "transparent"
                             radius: 7
                         }
                     }
@@ -262,7 +245,7 @@ ApplicationWindow {
                         anchors.fill: parent
                         anchors.margins: 18
                         series: root.backend.querySeries
-                        yLabel: "Query Count"
+                        yLabel: "Computation Count"
                         emptyText: "Select representations to show query counts"
                         ink: root.ink
                         muted: root.muted

@@ -226,7 +226,7 @@ Item {
             ctx.font = "13px sans-serif"
             ctx.textAlign = "center"
             ctx.textBaseline = "top"
-            ctx.fillText("Tuple Count", (area.left + area.right) / 2, height - 24)
+            ctx.fillText("Matrix Size", (area.left + area.right) / 2, height - 24)
 
             for (i = 0; i < series.length; i++) {
                 var line = series[i]
