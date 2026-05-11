@@ -36,8 +36,8 @@ public class Jenseits02 implements AutoCloseable {
     }
 
     private void benchmark() throws Exception {
-        int[] lengthVals = new int[] { Math.powExact(2, 3), Math.powExact(2, 5), Math.powExact(2, 7),
-                Math.powExact(2, 8) };
+        int[] lengthVals = new int[] { Math.powExact(2, 3), Math.powExact(2, 4), Math.powExact(2, 5),
+                Math.powExact(2, 6) };
         double[] sparsityVals = new double[] { 0.2, 0.4, 0.6, 0.8 };
 
         int timeUnitInSeconds = 60;
@@ -61,14 +61,17 @@ public class Jenseits02 implements AutoCloseable {
                 createDBMSDotProductFunction();
 
                 long count0 = countExecutions(() -> calculateMatrixMultApproach0(A, B), timeUnitInSeconds);
-                logger.log("approach0", String.valueOf(length), String.valueOf(sparsity), String.valueOf(count0));
+                double perSecond = count0 / (double) 60;
+                logger.log("approach0", String.valueOf(length), String.valueOf(sparsity), String.valueOf(perSecond));
 
                 long count1 = countExecutions(() -> calculateMatrixMultApproach1(length), timeUnitInSeconds);
-                logger.log("approach1", String.valueOf(length), String.valueOf(sparsity), String.valueOf(count1));
+                perSecond = count1 / (double) 60;
+                logger.log("approach1", String.valueOf(length), String.valueOf(sparsity), String.valueOf(perSecond));
 
                 long count2 = countExecutions(() -> calculateMatrixMultApproach2("A_vec", "B_vec", length),
                         timeUnitInSeconds);
-                logger.log("approach2", String.valueOf(length), String.valueOf(sparsity), String.valueOf(count2));
+                perSecond = count2 / (double) 60;
+                logger.log("approach2", String.valueOf(length), String.valueOf(sparsity), String.valueOf(perSecond));
             }
         }
         logger.flush();
