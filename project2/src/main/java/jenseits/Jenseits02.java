@@ -17,6 +17,7 @@ public class Jenseits02 implements AutoCloseable {
 
     public static void main(String[] args) throws Exception {
         try (var obj = new Jenseits02()) {
+            obj.show_toy_example();
             obj.benchmark();
         }
     }
@@ -110,7 +111,7 @@ public class Jenseits02 implements AutoCloseable {
     }
 
     public void show_toy_example() throws Exception {
-        // l := 4
+        int l = 4;
         // l - 1 x l
         double[][] A = {
                 { 1, 0, 0, 0 },
@@ -128,14 +129,24 @@ public class Jenseits02 implements AutoCloseable {
 
         importMatrix("toy_A", A);
         importMatrix("toy_B", B);
+        createDBMSMultFunction("toy_A", "toy_B");
+        importMatrixVector("toy_A_vec", A, true);
+        importMatrixVector("toy_B_vec", B, false);
+        createDBMSDotProductFunction();
 
         double[][] manualC = {
                 { 0, 1, 0 },
                 { 27, 22, 24 },
                 { 14, 22, 12 },
         };
-        double[][] C = calculateMatrixMultApproach0(A, B);
-        assert Arrays.equals(manualC, C);
+        double[][] C0 = calculateMatrixMultApproach0(A, B);
+        double[][] C1 = calculateMatrixMultApproach1(l);
+        double[][] C2 = calculateMatrixMultApproach2("toy_A_vec", "toy_B_vec", l);
+        assert Arrays.equals(manualC, C0);
+        assert Arrays.equals(manualC, C1);
+        assert Arrays.equals(manualC, C2);
+
+        IO.println("Toy example completed successfully.");
     }
 
     public static void show_phase1() throws Exception {
