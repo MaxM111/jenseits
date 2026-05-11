@@ -61,16 +61,16 @@ public class Jenseits02 implements AutoCloseable {
                 createDBMSDotProductFunction();
 
                 long count0 = countExecutions(() -> calculateMatrixMultApproach0(A, B), timeUnitInSeconds);
-                double perSecond = count0 / (double) 60;
+                double perSecond = count0 / (double) timeUnitInSeconds;
                 logger.log("approach0", String.valueOf(length), String.valueOf(sparsity), String.valueOf(perSecond));
 
                 long count1 = countExecutions(() -> calculateMatrixMultApproach1(length), timeUnitInSeconds);
-                perSecond = count1 / (double) 60;
+                perSecond = count1 / (double) timeUnitInSeconds;
                 logger.log("approach1", String.valueOf(length), String.valueOf(sparsity), String.valueOf(perSecond));
 
                 long count2 = countExecutions(() -> calculateMatrixMultApproach2("A_vec", "B_vec", length),
                         timeUnitInSeconds);
-                perSecond = count2 / (double) 60;
+                perSecond = count2 / (double) timeUnitInSeconds;
                 logger.log("approach2", String.valueOf(length), String.valueOf(sparsity), String.valueOf(perSecond));
             }
         }

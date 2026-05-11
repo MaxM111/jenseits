@@ -26,7 +26,6 @@ class PlotController(QObject):
         self.selected_representations = set()
         self.sparsity_index = 1 if len(self.sparsity_values) > 1 else 0
         self.query_series = []
-        self.size_series = []
         self.update_plots()
 
     @pyqtProperty(int, notify=controlsChanged)
@@ -48,10 +47,6 @@ class PlotController(QObject):
     @pyqtProperty("QVariantList", notify=plotsChanged)
     def querySeries(self) -> list[dict[str, object]]:
         return self.query_series
-
-    @pyqtProperty("QVariantList", notify=plotsChanged)
-    def sizeSeries(self) -> list[dict[str, object]]:
-        return self.size_series
 
     @pyqtProperty("QVariantList", constant=True)
     def representationNames(self) -> list[str]:
@@ -101,7 +96,6 @@ class PlotController(QObject):
     def update_plots(self) -> None:
         data = self.filtered_data()
         self.query_series = self.build_query_series(data)
-        self.size_series = self.build_size_series(data)
         self.plotsChanged.emit()
 
     def build_query_series(self, data: pd.DataFrame) -> list[dict[str, object]]:
@@ -115,27 +109,7 @@ class PlotController(QObject):
                     line_type="Q1",
                     color=REPRESENTATION_COLORS[representation],
                     rows=representation_data,
-                    value_column="elapsedTime",
-                    dashed=False,
-                )
-            )
-        return series
-
-    def build_size_series(self, data: pd.DataFrame) -> list[dict[str, object]]:
-        series = []
-        for representation in self.selected_representation_order():
-            representation_data = data[data["Approach"] == representation].copy()
-            representation_data["tableSizeMb"] = (
-                representation_data["tableSize"] / 1_000_000
-            )
-            series.append(
-                self.series_from_rows(
-                    name=representation,
-                    representation=representation,
-                    line_type="",
-                    color=REPRESENTATION_COLORS[representation],
-                    rows=representation_data,
-                    value_column="tableSizeMb",
+                    value_column="queryCount",
                     dashed=False,
                 )
             )
