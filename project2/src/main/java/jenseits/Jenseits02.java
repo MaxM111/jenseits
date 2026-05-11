@@ -179,10 +179,7 @@ public class Jenseits02 implements AutoCloseable {
     private double[][] calculateMatrixMultApproach2(String name1, String name2, int length) throws Exception {
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(String.format("""
-                SELECT
-                    A.i,
-                    B.j,
-                    dot_product(A.row,B.col) AS val
+                SELECT A.i, B.j, dot_product(A.row,B.col) AS val
                 FROM %s AS A, %s AS B
                 """, name1, name2));
         double[][] resultMatrix = new double[length - 1][length - 1];
