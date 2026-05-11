@@ -211,7 +211,7 @@ ApplicationWindow {
 
                     TabButton {
                         id: queryTab
-                        text: "Computations/min"
+                        text: "Computations/s"
                         contentItem: Text {
                             text: queryTab.text
                             color: plotTabs.currentIndex === 0 ? "white" : root.ink
