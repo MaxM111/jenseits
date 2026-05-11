@@ -41,7 +41,7 @@ public class Jenseits02 implements AutoCloseable {
 
         int timeUnitInSeconds = 3 * 60;
 
-        logger.log("Approach", "matrixLength", "sparsity", "elapsedTime");
+        logger.log("Approach", "matrixLength", "sparsity", "queryCount");
         IO.println("Beginning Benchmark.");
 
         for (var length : lengthVals) {
