@@ -39,7 +39,7 @@ public class Jenseits02 implements AutoCloseable {
                 Math.powExact(2, 8) };
         double[] sparsityVals = new double[] { 0.2, 0.4, 0.6, 0.8 };
 
-        int timeUnitInSeconds = 3 * 60;
+        int timeUnitInSeconds = 60;
 
         logger.log("Approach", "matrixLength", "sparsity", "queryCount");
         IO.println("Beginning Benchmark.");
