@@ -36,7 +36,7 @@ public class Jenseits02 implements AutoCloseable {
 
     private void benchmark() throws Exception {
         int[] lengthVals = new int[] { Math.powExact(2, 3), Math.powExact(2, 5), Math.powExact(2, 7),
-                Math.powExact(2, 9) };
+                Math.powExact(2, 8) };
         double[] sparsityVals = new double[] { 0.2, 0.4, 0.6, 0.8 };
 
         int timeUnitInSeconds = 3 * 60;
