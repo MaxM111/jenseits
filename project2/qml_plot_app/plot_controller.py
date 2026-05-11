@@ -26,6 +26,7 @@ class PlotController(QObject):
         self.selected_representations = set()
         self.sparsity_index = 1 if len(self.sparsity_values) > 1 else 0
         self.query_series = []
+        self.size_series = []
         self.update_plots()
 
     @pyqtProperty(int, notify=controlsChanged)
@@ -47,6 +48,10 @@ class PlotController(QObject):
     @pyqtProperty("QVariantList", notify=plotsChanged)
     def querySeries(self) -> list[dict[str, object]]:
         return self.query_series
+
+    @pyqtProperty("QVariantList", notify=plotsChanged)
+    def sizeSeries(self) -> list[dict[str, object]]:
+        return self.size_series
 
     @pyqtProperty("QVariantList", constant=True)
     def representationNames(self) -> list[str]:

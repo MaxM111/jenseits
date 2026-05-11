@@ -30,21 +30,34 @@ Item {
 
         var xMin = points[0].x
         var xMax = points[0].x
-        var yMax = points[0].y
+        var yMin = null
+        var yMax = null
         for (var i = 0; i < points.length; i++) {
             xMin = Math.min(xMin, points[i].x)
             xMax = Math.max(xMax, points[i].x)
-            yMax = Math.max(yMax, points[i].y)
+            if (points[i].y > 0) {
+                yMin = yMin === null ? points[i].y : Math.min(yMin, points[i].y)
+                yMax = yMax === null ? points[i].y : Math.max(yMax, points[i].y)
+            }
+        }
+        if (yMin === null || yMax === null) {
+            return null
         }
         if (xMin === xMax) {
             xMin -= 1
             xMax += 1
         }
+        var yMinLog = Math.floor(log10(yMin))
+        var yMaxLog = Math.ceil(log10(yMax))
+        if (yMinLog === yMaxLog) {
+            yMinLog -= 1
+            yMaxLog += 1
+        }
         return {
             "xMin": xMin,
             "xMax": xMax,
-            "yMin": 0,
-            "yMax": yMax === 0 ? 1 : yMax * 1.1
+            "yMinLog": yMinLog,
+            "yMaxLog": yMaxLog
         }
     }
 
@@ -61,8 +74,12 @@ Item {
         return area.left + (value - limits.xMin) / (limits.xMax - limits.xMin) * (area.right - area.left)
     }
 
+    function log10(value) {
+        return Math.log(value) / Math.LN10
+    }
+
     function yToPixel(value, area, limits) {
-        return area.bottom - (value - limits.yMin) / (limits.yMax - limits.yMin) * (area.bottom - area.top)
+        return area.bottom - (log10(value) - limits.yMinLog) / (limits.yMaxLog - limits.yMinLog) * (area.bottom - area.top)
     }
 
     function formatNumber(value) {
@@ -70,6 +87,10 @@ Item {
             return Math.round(value).toLocaleString(Qt.locale("en_US"))
         }
         return Number(value.toFixed(2)).toString()
+    }
+
+    function formatPowerOfTen(exponent) {
+        return "10^" + exponent
     }
 
     function updateHover(mouseX, mouseY) {
@@ -86,6 +107,9 @@ Item {
         for (var i = 0; i < series.length; i++) {
             for (var j = 0; j < series[i].points.length; j++) {
                 var point = series[i].points[j]
+                if (point.y <= 0) {
+                    continue
+                }
                 var px = xToPixel(point.x, area, limits)
                 var py = yToPixel(point.y, area, limits)
                 var distance = Math.sqrt(Math.pow(mouseX - px, 2) + Math.pow(mouseY - py, 2))
@@ -102,6 +126,7 @@ Item {
 
         if (best === null) {
             hoverPopup.visible = false
+            hoverMarker.visible = false
             return
         }
 
@@ -171,15 +196,14 @@ Item {
             ctx.textAlign = "right"
             ctx.textBaseline = "middle"
 
-            var yTicks = 5
-            for (var i = 0; i <= yTicks; i++) {
-                var yValue = limits.yMin + (limits.yMax - limits.yMin) * i / yTicks
+            for (var i = limits.yMinLog; i <= limits.yMaxLog; i++) {
+                var yValue = Math.pow(10, i)
                 var y = chart.yToPixel(yValue, area, limits)
                 ctx.beginPath()
                 ctx.moveTo(area.left, y)
                 ctx.lineTo(area.right, y)
                 ctx.stroke()
-                ctx.fillText(chart.formatNumber(yValue), area.left - 10, y)
+                ctx.fillText(chart.formatPowerOfTen(i), area.left - 10, y)
             }
 
             var xValues = []
@@ -239,11 +263,17 @@ Item {
                     ctx.setLineDash(line.dashed ? [8, 6] : [])
                 }
                 ctx.beginPath()
+                var hasLineSegment = false
                 for (var j = 0; j < line.points.length; j++) {
+                    if (line.points[j].y <= 0) {
+                        hasLineSegment = false
+                        continue
+                    }
                     x = chart.xToPixel(line.points[j].x, area, limits)
                     y = chart.yToPixel(line.points[j].y, area, limits)
-                    if (j === 0) {
+                    if (!hasLineSegment) {
                         ctx.moveTo(x, y)
+                        hasLineSegment = true
                     } else {
                         ctx.lineTo(x, y)
                     }
@@ -255,6 +285,9 @@ Item {
 
                 ctx.fillStyle = line.color
                 for (j = 0; j < line.points.length; j++) {
+                    if (line.points[j].y <= 0) {
+                        continue
+                    }
                     x = chart.xToPixel(line.points[j].x, area, limits)
                     y = chart.yToPixel(line.points[j].y, area, limits)
                     ctx.beginPath()
