@@ -58,3 +58,17 @@ $$dom(R) = \prod_{a \in A} dom(a)$$
 - Sei sparsam mit \| (oder) bei Erstellung von XML repräsentation
   - Es ist ineffizient, da es mehr Möglichekeiten gibt, die man überprüfen muss
   - Wenn man mehr und mehr verwendet, dann wird die Struktur nicht mehr im Griff behalten
+
+- Wie können XML-Dokumente aufgebaut sein
+  - Konstruktoren relevant, Syntax eher nicht (ist ihm nicht so wichtig)
+  - XML-Konzepte wie atomare Typen, Listenkomposition
+  - Vergleich mit relationalem Modell
+
+- Structured Consciousness
+  - z.b. wenn man weiß, dass ein gewisses Element genau einmal vorkommt, dann muss man nicht auf mehrere überprüfen
+  
+- Abgeschlossenheit:
+  - Relationale Algebra ist abgeschlossen (jeder Operator nimmt und resultiert in einer neuen Relation)
+  - um das ähnlich zu machen, wird bei xpath-artiges oft ein Baum zurückgegeben, der einen root "result" hat, dessen Kinder die Ergebnisse sind.
+
+- XML oft langsamer als relationale Algebra, weil sie mehr können und somit komplexer sind.
