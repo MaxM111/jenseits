@@ -72,3 +72,19 @@ $$dom(R) = \prod_{a \in A} dom(a)$$
   - um das ähnlich zu machen, wird bei xpath-artiges oft ein Baum zurückgegeben, der einen root "result" hat, dessen Kinder die Ergebnisse sind.
 
 - XML oft langsamer als relationale Algebra, weil sie mehr können und somit komplexer sind.
+
+## XPath
+- Pfadausdrücke für XML
+- Scheinbar wichtig: Zwischen relativ und absolute Pfadausdrücke unterscheiden können
+- Syntax muss nicht gekonnt werden, nur was es kann
+- Wichtig ist Folie 26 "Achsen": Man soll die Begriffe verstehen können
+- Edge Modell ist schlecht, weil das Aufsplitten zu sehr hohen Kosten bei der Berechnung von Joins führt
+- R in R-Baum steht für Rectangle
+- MBR = Minimum Bounded Rectangle
+  - zeichnen minimales aber noch bounded Rectangle um mehrere Rectangles um es einzuordnen
+- Implementierung von R-Baum in DBMS heißt "GiST"="Generalised Search Tree" (Generalisierung von der geometrischen Form, z.b. statt Rechtecke nimmt man Kreise)
+- Wenn man Knoten von XMl-Baum mit pre-und postorder annotiert, können die Order-werte als Koordinaten verwendet werden (siehe Abb. in Folien)
+- Vektorrepräsentation ist empfohlen
+  - man braucht nicht die letzten zwei "fields" kind(v) und name(v), so wäre es vollständig, aber für die Aufgabe erwartet nur das Konzept (also pre-/postorder und parent)
+- Implementiere in Aufgabe erst mit Infinity und 0 als bounds
+  - Später wird dann eine Optimierung implementiert
