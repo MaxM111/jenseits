@@ -57,6 +57,11 @@ public class Node {
         return this;
     }
 
+    public void removeChild(Node child) {
+        children.removeIf(c -> c.getID() == child.getID());
+        child.parent = null;
+    }
+
     /**
      * Add an attribute to the element.
      *
@@ -75,6 +80,10 @@ public class Node {
 
     public void setParent(Node parent) {
         this.parent = parent;
+    }
+
+    public long getID() {
+        return this.id;
     }
 
     /*
