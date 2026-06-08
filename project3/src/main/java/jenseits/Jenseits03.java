@@ -1,15 +1,9 @@
 package jenseits;
 
 import java.sql.Connection;
-import java.util.Arrays;
-import java.util.Random;
-import java.sql.Statement;
-import java.sql.ResultSet;
 
 import jenseits.setup.*;
 
-import static jenseits.setup.Utils.countExecutions;
-import jenseits.setup.Pair;
 import jenseits.util.Logger;
 
 public class Jenseits03 implements AutoCloseable {
