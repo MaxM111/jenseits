@@ -3,7 +3,7 @@
 <!-- We added this reference at the beginning, because the SAX parser otherwise could not find the dtd -->
 
 <!-- We changed bib to dblp, because it looked like that's how its supposed to be from the dblp -->
-<dblp>
+<bib>
 	<article mdate="2024-02-05" key="journals/pvldb/SchmittKAMM23">
 		<author orcid="0009-0005-7656-7526">Daniel Ulrich Schmitt</author>
 		<author>Daniel Kocher</author>
@@ -64,4 +64,4 @@
 		<ee>https://doi.org/10.14778/3594512.3594515</ee>
 		<url>db/journals/pvldb/pvldb16.html#SchalerHS23</url>
 	</article>
-</dblp>
+</bib>

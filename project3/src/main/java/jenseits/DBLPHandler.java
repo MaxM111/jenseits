@@ -5,7 +5,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class DBLPHandler extends DefaultHandler {
-    private static final String BIB = "dblp";
+    private static final String BIB = "bib";
     private static final String ARTICLE = "article";
     private static final String INPROCEEDINGS = "inproceedings";
 
@@ -44,7 +44,7 @@ public class DBLPHandler extends DefaultHandler {
     public void startElement(String uri, String lName, String qName, Attributes attributes) throws SAXException {
         switch (qName) {
             case BIB -> {
-                root = new Node("dblp", null);
+                root = new Node("bib", null);
             }
             case ARTICLE -> {
                 currentNode = new Node("article", root);
