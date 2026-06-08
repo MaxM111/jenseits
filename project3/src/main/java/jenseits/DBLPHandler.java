@@ -5,7 +5,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class DBLPHandler extends DefaultHandler {
-    private static final String BIB = "bib";
+    private static final String BIB = "dblp";
     private static final String ARTICLE = "article";
     private static final String INPROCEEDINGS = "inproceedings";
 
