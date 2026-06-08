@@ -69,6 +69,14 @@ public class Node {
         return this;
     }
 
+    public Node getParent() {
+        return this.parent;
+    }
+
+    public void setParent(Node parent) {
+        this.parent = parent;
+    }
+
     /*
      * Converts the XML subtree into the edge model.
      */
