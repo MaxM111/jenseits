@@ -1,5 +1,8 @@
 package jenseits;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -26,6 +29,10 @@ public class DBLPHandler extends DefaultHandler {
 
     private Node currentNode;
     private String temp;
+    private String currentVenue;
+    private String currentYear;
+    private final Map<String, Node> venueNodes = new HashMap<>();
+    private final Map<String, Node> yearNodes = new HashMap<>();
 
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
@@ -49,18 +56,33 @@ public class DBLPHandler extends DefaultHandler {
             case ARTICLE -> {
                 currentNode = new Node("article", root);
                 var key = attributes.getValue("key");
+                String[] keyParts;
                 if (key == null) {
-                    IO.println("warning: key attribute is missing");
+                    keyParts = new String[0];
+                } else {
+                    keyParts = key.split("/");
                 }
-                currentNode.addAttribute("key", key);
+                if (keyParts.length < 2) {
+                    IO.println("warning: key attribute is missing or malformed");
+                    currentVenue = null;
+                } else {
+                    currentVenue = keyParts[1];
+                    currentNode.addAttribute("key", key);
+                }
+                currentYear = null;
             }
             case INPROCEEDINGS -> {
                 currentNode = new Node("article", root);
                 var key = attributes.getValue("key");
-                if (key == null) {
-                    IO.println("warning: key attribute is missing");
+                var keyParts = key == null ? new String[0] : key.split("/");
+                if (keyParts.length < 2) {
+                    IO.println("warning: key attribute is missing or malformed");
+                    currentVenue = null;
+                } else {
+                    currentVenue = keyParts[1];
+                    currentNode.addAttribute("key", key);
                 }
-                currentNode.addAttribute("key", key);
+                currentYear = null;
             }
             case AUTHOR, TITLE, PAGES, YEAR,
                     BOOK_TITLE, VOLUME, JOURNAL,
@@ -81,10 +103,10 @@ public class DBLPHandler extends DefaultHandler {
             case BIB -> {
             }
             case ARTICLE -> {
-                root.appendChild(currentNode);
+                appendCurrentPublication();
             }
             case INPROCEEDINGS -> {
-                root.appendChild(currentNode);
+                appendCurrentPublication();
             }
 
             case AUTHOR, TITLE, PAGES, YEAR,
@@ -107,6 +129,9 @@ public class DBLPHandler extends DefaultHandler {
                 var node = new Node(tag, currentNode);
                 currentNode.appendChild(node);
                 node.setContent(valueBuilder.toString());
+                if (qName.equals(YEAR)) {
+                    currentYear = valueBuilder.toString();
+                }
             }
             case EE -> {
                 var node = new Node("ee", currentNode);
@@ -117,6 +142,33 @@ public class DBLPHandler extends DefaultHandler {
                 }
             }
         }
+    }
+
+    private void appendCurrentPublication() {
+        if (currentVenue == null || currentYear == null) {
+            IO.println("warning: publication venue or year is missing. Discarding publication...");
+            return;
+        }
+
+        var venueNode = venueNodes.get(currentVenue);
+        if (venueNode == null) {
+            venueNode = new Node("venue", root);
+            venueNode.addAttribute("name", currentVenue);
+            root.appendChild(venueNode);
+            venueNodes.put(currentVenue, venueNode);
+        }
+
+        var yearKey = currentVenue + "_" + currentYear;
+        var yearNode = yearNodes.get(yearKey);
+        if (yearNode == null) {
+            yearNode = new Node("publishingYear", venueNode);
+            yearNode.addAttribute("value", currentYear);
+            venueNode.appendChild(yearNode);
+            yearNodes.put(yearKey, yearNode);
+        }
+
+        currentNode.setParent(yearNode);
+        yearNode.appendChild(currentNode);
     }
 
     public Node getTree() {
