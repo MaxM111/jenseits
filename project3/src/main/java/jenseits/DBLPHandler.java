@@ -118,4 +118,8 @@ public class DBLPHandler extends DefaultHandler {
             }
         }
     }
+
+    public Node getTree() {
+        return this.root;
+    }
 }

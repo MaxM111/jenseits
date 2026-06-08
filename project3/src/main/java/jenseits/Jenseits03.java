@@ -18,7 +18,9 @@ public class Jenseits03 implements AutoCloseable {
     public static void main(String[] args) throws Exception {
         SAXParserFactory factory = SAXParserFactory.newInstance();
         SAXParser parser = factory.newSAXParser();
-        parser.parse("toy_example.txt", new DBLPHandler());
+        var handler = new DBLPHandler();
+        parser.parse("toy_example.txt", handler);
+        IO.println(handler.getTree().toString());
     }
 
     Connection conn;

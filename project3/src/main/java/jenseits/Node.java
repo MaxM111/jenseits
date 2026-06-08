@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Node {
     private static long idCounter = 0;
@@ -27,6 +28,7 @@ public class Node {
         this.tag = value;
         this.parent = null;
         this.id = idCounter++;
+        this.value = value;
     }
 
     /**
@@ -41,6 +43,7 @@ public class Node {
         this.id = idCounter++;
         this.children = new ArrayList<>();
         this.attributes = new HashMap<>();
+        this.value = null;
     }
 
     /**
@@ -71,6 +74,31 @@ public class Node {
      */
     public void toEdgeModel(Connection conn) {
 
+    }
+
+    @Override
+    public String toString() {
+        String s = "";
+
+        if (value == null) {
+            s += "<" + this.tag + ">";
+            if (this.tag.equals("article") || this.tag.equals("bib") || this.tag.equals("inproceedings")) {
+                s += "\n";
+            }
+
+            for (var child : children) {
+                s += child.toString()
+                        .lines()
+                        .map(line -> !line.strip().startsWith("<") ? line : "  " + line + "\n")
+                        .collect(Collectors.joining());
+            }
+
+            s += "</" + this.tag + ">\n";
+        } else {
+            s += value;
+        }
+
+        return s;
     }
 
     /*
