@@ -120,8 +120,9 @@ public class Node {
     @Override
     public boolean equals(Object other) {
         if (other instanceof Node) {
+            return ((Node) other).getID() == this.id;
+        } else {
             return false;
         }
-        return ((Node) other).getID() == this.id;
     }
 }
