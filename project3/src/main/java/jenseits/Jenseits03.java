@@ -2,6 +2,9 @@ package jenseits;
 
 import java.sql.Connection;
 
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
 import jenseits.setup.*;
 
 import jenseits.util.Logger;
@@ -10,9 +13,10 @@ public class Jenseits03 implements AutoCloseable {
     private Logger logger;
 
     public static void main(String[] args) throws Exception {
-        try (var obj = new Jenseits03()) {
-            // TODO:
-        }
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        SAXParser parser = factory.newSAXParser();
+        DBLPHandler handler = new DBLPHandler();
+        parser.parse("toy_example.txt", handler);
     }
 
     Connection conn;
