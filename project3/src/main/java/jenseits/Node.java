@@ -17,7 +17,7 @@ public class Node {
     private List<Node> children;
 
     // null if it is composite, text value if it is atomic
-    private String value;
+    private String content;
 
     /**
      * Construct a new Node.
@@ -28,7 +28,7 @@ public class Node {
         this.tag = value;
         this.parent = null;
         this.id = idCounter++;
-        this.value = value;
+        this.content = value;
     }
 
     /**
@@ -43,7 +43,7 @@ public class Node {
         this.id = idCounter++;
         this.children = new ArrayList<>();
         this.attributes = new TreeMap<>();
-        this.value = null;
+        this.content = null;
     }
 
     /**
@@ -58,7 +58,7 @@ public class Node {
     }
 
     public void removeChild(Node child) {
-        children.removeIf(c -> c.getID() == child.getID());
+        children.remove(child);
         child.parent = null;
     }
 
@@ -97,7 +97,7 @@ public class Node {
     public String toString() {
         String s = "";
 
-        if (value == null) {
+        if (content == null) {
             s += "<" + this.tag;
             for (var key : this.attributes.keySet()) {
                 s += " " + key + "=\"" + this.attributes.get(key) + '"';
@@ -116,20 +116,17 @@ public class Node {
 
             s += "</" + this.tag + ">\n";
         } else {
-            s += value;
+            s += content;
         }
 
         return s;
     }
 
-    /*
-     * Construct a tree of Nodes from the given XML source.
-     *
-     * @param xmlPath the path to the xml file.
-     * 
-     * @return the root of the resulting element tree.
-     */
-    public static Node createFromXml(String xmlPath) {
-        return null;
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof Node) {
+            return false;
+        }
+        return ((Node) other).getID() == this.id;
     }
 }
