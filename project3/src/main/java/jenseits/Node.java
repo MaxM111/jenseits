@@ -2,9 +2,9 @@ package jenseits;
 
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public class Node {
@@ -12,7 +12,7 @@ public class Node {
 
     private long id;
     private String tag;
-    private Map<String, String> attributes;
+    private NavigableMap<String, String> attributes;
     private Node parent;
     private List<Node> children;
 
@@ -42,7 +42,7 @@ public class Node {
         this.parent = parent;
         this.id = idCounter++;
         this.children = new ArrayList<>();
-        this.attributes = new HashMap<>();
+        this.attributes = new TreeMap<>();
         this.value = null;
     }
 
@@ -81,7 +81,11 @@ public class Node {
         String s = "";
 
         if (value == null) {
-            s += "<" + this.tag + ">";
+            s += "<" + this.tag;
+            for (var key : this.attributes.keySet()) {
+                s += " " + key + "=\"" + this.attributes.get(key) + '"';
+            }
+            s += ">";
             if (this.tag.equals("article") || this.tag.equals("bib") || this.tag.equals("inproceedings")) {
                 s += "\n";
             }
