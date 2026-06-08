@@ -44,7 +44,7 @@ public class DBLPHandler extends DefaultHandler {
     public void startElement(String uri, String lName, String qName, Attributes attributes) throws SAXException {
         switch (qName) {
             case BIB -> {
-                root = new Node("bib", null);
+                root = new Node("dblp", null);
             }
             case ARTICLE -> {
                 currentNode = new Node("article", root);
