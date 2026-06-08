@@ -20,7 +20,12 @@ public class Jenseits03 implements AutoCloseable {
         SAXParser parser = factory.newSAXParser();
         var handler = new DBLPHandler();
         parser.parse("toy_example.txt", handler);
-        IO.println(handler.getTree().toString());
+        var tree = handler.getTree();
+        IO.println(tree.toString());
+        try (var obj = new Jenseits03()) {
+            tree.toEdgeModel(obj.getConn());
+        }
+
     }
 
     Connection conn;
@@ -29,6 +34,10 @@ public class Jenseits03 implements AutoCloseable {
         conn = DB.getConnection(Database.POSTGRESQL);
         conn.setAutoCommit(true);
         logger = new Logger("logs", "log.csv");
+    }
+
+    public Connection getConn() {
+        return conn;
     }
 
     @Override

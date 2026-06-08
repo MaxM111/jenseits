@@ -1,6 +1,8 @@
 package jenseits;
 
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
@@ -84,8 +86,46 @@ public class Node {
     /*
      * Converts the XML subtree into the edge model.
      */
-    public void toEdgeModel(Connection conn) {
+    public void toEdgeModel(Connection conn) throws SQLException {
+        var statement = conn.createStatement();
+        statement.execute("DROP TABLE IF EXISTS Node, Edge");
+        statement.execute(
+                "CREATE TABLE Node (id INTEGER NOT NULL, s_id VARCHAR(50), type VARCHAR(50) NOT NULL, content VARCHAR(255))");
+        statement.execute("CREATE TABLE Edge (from_ INTEGER NOT NULL, to_ INTEGER NOT NULL)");
+        insertSubtreeToEdgeModel(statement);
+        statement.close();
+    }
 
+    private void insertSubtreeToEdgeModel(Statement statement) throws SQLException {
+        String s_id;
+        if (tag.equals("bib")) {
+            s_id = "bib";
+        } else if (tag.equals("venue")) {
+            s_id = attributes.getOrDefault("name", "null");
+        } else if (tag.equals("publishingYear")) {
+            String year = attributes.getOrDefault("value", "null");
+            String venue = this.parent.attributes.getOrDefault("name", "null");
+            s_id = venue + "_" + year;
+        } else {
+            s_id = "null";
+        }
+
+        var query = String.format("INSERT INTO Node VALUES (%d, '%s', '%s', '%s')",
+                this.id,
+                s_id,
+                this.tag,
+                this.content == null ? "null" : this.content.replace("'", "''"));
+        IO.println(query);
+        statement.execute(query);
+
+        insertChildrenIntoEdgeModel(statement);
+    }
+
+    private void insertChildrenIntoEdgeModel(Statement statement) throws SQLException {
+        for (var child : children) {
+            statement.execute(String.format("INSERT INTO Edge VALUES (%d, %d)", this.id, child.getID()));
+            child.insertSubtreeToEdgeModel(statement);
+        }
     }
 
     @Override
