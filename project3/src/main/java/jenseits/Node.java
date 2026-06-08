@@ -115,7 +115,6 @@ public class Node {
                 s_id,
                 this.tag,
                 this.content == null ? "null" : this.content.replace("'", "''"));
-        IO.println(query);
         statement.execute(query);
 
         insertChildrenIntoEdgeModel(statement);
