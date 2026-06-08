@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -15,21 +16,7 @@ public class Node {
     private NavigableMap<String, String> attributes;
     private Node parent;
     private List<Node> children;
-
-    // null if it is composite, text value if it is atomic
-    private String content;
-
-    /**
-     * Construct a new Node.
-     *
-     * @param value the value of the atomic element.
-     */
-    public Node(String value) {
-        this.tag = value;
-        this.parent = null;
-        this.id = idCounter++;
-        this.content = value;
-    }
+    private String content; // can be null
 
     /**
      * Construct a new Node.
@@ -60,6 +47,14 @@ public class Node {
     public void removeChild(Node child) {
         children.remove(child);
         child.parent = null;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public Optional<String> getContent() {
+        return Optional.ofNullable(this.content);
     }
 
     /**
@@ -97,27 +92,27 @@ public class Node {
     public String toString() {
         String s = "";
 
-        if (content == null) {
-            s += "<" + this.tag;
-            for (var key : this.attributes.keySet()) {
-                s += " " + key + "=\"" + this.attributes.get(key) + '"';
-            }
-            s += ">";
-            if (this.tag.equals("article") || this.tag.equals("bib") || this.tag.equals("inproceedings")) {
-                s += "\n";
-            }
-
-            for (var child : children) {
-                s += child.toString()
-                        .lines()
-                        .map(line -> !line.strip().startsWith("<") ? line : "  " + line + "\n")
-                        .collect(Collectors.joining());
-            }
-
-            s += "</" + this.tag + ">\n";
-        } else {
-            s += content;
+        s += "<" + this.tag;
+        for (var key : this.attributes.keySet()) {
+            s += " " + key + "=\"" + this.attributes.get(key) + '"';
         }
+        s += ">";
+        if (this.tag.equals("article") || this.tag.equals("bib") || this.tag.equals("inproceedings")) {
+            s += "\n";
+        }
+
+        if (this.content != null) {
+            s += this.content;
+        }
+
+        for (var child : children) {
+            s += child.toString()
+                    .lines()
+                    .map(line -> !line.strip().startsWith("<") ? line : "  " + line + "\n")
+                    .collect(Collectors.joining());
+        }
+
+        s += "</" + this.tag + ">\n";
 
         return s;
     }

@@ -106,12 +106,12 @@ public class DBLPHandler extends DefaultHandler {
                 };
                 var node = new Node(tag, currentNode);
                 currentNode.appendChild(node);
-                node.appendChild(new Node(valueBuilder.toString()));
+                node.setContent(valueBuilder.toString());
             }
             case EE -> {
                 var node = new Node("ee", currentNode);
                 currentNode.appendChild(node);
-                node.appendChild(new Node(valueBuilder.toString()));
+                node.setContent(valueBuilder.toString());
                 if (temp != null) {
                     node.addAttribute("type", temp);
                 }
