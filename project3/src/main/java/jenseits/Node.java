@@ -21,7 +21,7 @@ public class Node {
      *
      * @param value the value of the atomic element.
      */
-    private Node(String value) {
+    public Node(String value) {
         this.tag = value;
         this.parent = null;
         this.id = idCounter++;
@@ -33,7 +33,7 @@ public class Node {
      * @param tag    the identifier of the element.
      * @param parent the parent of the element, set to null if it is the root.
      */
-    private Node(String tag, Node parent) {
+    public Node(String tag, Node parent) {
         this.tag = tag;
         this.parent = parent;
         this.id = idCounter++;
