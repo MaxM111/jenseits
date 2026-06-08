@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Map;
 
 public class Node {
+    private static long idCounter = 0;
+
+    private long id;
     private String tag;
     private Map<String, String> attributes;
     private Node parent;
@@ -21,6 +24,7 @@ public class Node {
     private Node(String value) {
         this.tag = value;
         this.parent = null;
+        this.id = idCounter++;
     }
 
     /**
@@ -32,6 +36,7 @@ public class Node {
     private Node(String tag, Node parent) {
         this.tag = tag;
         this.parent = parent;
+        this.id = idCounter++;
     }
 
     /**
