@@ -1,6 +1,8 @@
 package jenseits;
 
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +39,8 @@ public class Node {
         this.tag = tag;
         this.parent = parent;
         this.id = idCounter++;
+        this.children = new ArrayList<>();
+        this.attributes = new HashMap<>();
     }
 
     /**
