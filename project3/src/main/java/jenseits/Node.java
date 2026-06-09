@@ -90,8 +90,8 @@ public class Node {
         var statement = conn.createStatement();
         statement.execute("DROP TABLE IF EXISTS Node, Edge");
         statement.execute(
-                "CREATE TABLE Node (id INTEGER NOT NULL, s_id VARCHAR(50), type VARCHAR(50) NOT NULL, content VARCHAR(255))");
-        statement.execute("CREATE TABLE Edge (from_ INTEGER NOT NULL, to_ INTEGER NOT NULL)");
+                "CREATE TABLE Node (id BIGINT NOT NULL, s_id VARCHAR(50), type VARCHAR(50) NOT NULL, content VARCHAR(255))");
+        statement.execute("CREATE TABLE Edge (from_ BIGINT NOT NULL, to_ BIGINT NOT NULL)");
         insertSubtreeToEdgeModel(statement);
         statement.close();
     }
