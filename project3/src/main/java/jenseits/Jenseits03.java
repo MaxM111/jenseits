@@ -34,7 +34,15 @@ public class Jenseits03 implements AutoCloseable {
             pprintNodeRecords("The descendants of pvldb_2023 are", descendants);
 
             var ancestors = obj.getAncestors(2); // Author Daniel Ulrich Schmitt has ID 2
-            pprintNodeRecords("The ancestors of pvldb_2023 are", ancestors);
+            pprintNodeRecords("The ancestors of Author Daniel Ulrich Schmitt are", ancestors);
+
+            var psiblings1 = obj.getPrecedingSibling(1); // 1 is ID of "SchmittKAMM23"
+            pprintNodeRecords("The p-siblings of SchmittKAMM23 are", psiblings1);
+            // TODO: fsibling
+
+            var psiblings50 = obj.getPrecedingSibling(50); // is ID of "SchalerHS23"
+            pprintNodeRecords("The p-siblings of SchalerHS23 are", psiblings50);
+            // TODO: fsibling
         }
 
     }
@@ -54,6 +62,39 @@ public class Jenseits03 implements AutoCloseable {
     @Override
     public void close() throws Exception {
         conn.close();
+    }
+
+    /*
+     * Return the list of preceding-siblings of a given node ID.
+     *
+     * @param id the ID of the node
+     *
+     * @return the list of IDs of nodes that are p-siblings of the given node ID
+     *
+     * @throws SQLException
+     */
+    public List<NodeRecord> getPrecedingSibling(long id) throws SQLException {
+        // preceding siblings are siblings with ID < id
+        var results = conn.createStatement().executeQuery(String.format("""
+                SELECT *
+                FROM (SELECT e.to_ AS id
+                FROM Edge AS e
+                WHERE e.to_ < %s AND e.from_ = (SELECT e.from_ AS id
+                                                FROM Edge AS e
+                                                WHERE e.to_ = %s
+                                                LIMIT 1)) as result
+                INNER JOIN Node as n ON result.id = n.id
+                            """,
+                String.valueOf(id), String.valueOf(id)));
+        List<NodeRecord> precidingSiblings = new ArrayList<>();
+        while (results.next()) {
+            var id_ = results.getLong("id");
+            var s_id = results.getString("s_id");
+            var type = results.getString("type");
+            var content = results.getString("content");
+            precidingSiblings.add(new NodeRecord(id_, s_id, type, content));
+        }
+        return precidingSiblings;
     }
 
     /*
