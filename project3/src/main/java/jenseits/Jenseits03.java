@@ -33,7 +33,7 @@ public class Jenseits03 implements AutoCloseable {
             var descendants = obj.getDescendants(17); // 17 is ID of "pvldb_2023"
             pprintNodeRecords("The descendants of pvldb_2023 are", descendants);
 
-            var ancestors = obj.getAncestors(17); // 17 is ID of "pvldb_2023"
+            var ancestors = obj.getAncestors(2); // Author Daniel Ulrich Schmitt has ID 2
             pprintNodeRecords("The ancestors of pvldb_2023 are", ancestors);
         }
 
