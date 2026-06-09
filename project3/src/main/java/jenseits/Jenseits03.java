@@ -31,8 +31,10 @@ public class Jenseits03 implements AutoCloseable {
             tree.toEdgeModel(obj.getConn());
 
             var descendants = obj.getDescendants(17); // 17 is ID of "pvldb_2023"
-
             pprintNodeRecords("The descendants of pvldb_2023 are", descendants);
+
+            var ancestors = obj.getAncestors(17); // 17 is ID of "pvldb_2023"
+            pprintNodeRecords("The ancestorss of pvldb_2023 are", ancestors);
         }
 
     }
@@ -74,6 +76,32 @@ public class Jenseits03 implements AutoCloseable {
                     FROM Edge as e
                     INNER JOIN descendants AS d
                     ON e.from_ = d.id
+                ) SELECT * FROM descendants NATURAL JOIN Node
+                    """,
+                String.valueOf(id)));
+
+        List<NodeRecord> descendants = new ArrayList<>();
+        while (results.next()) {
+            var id_ = results.getLong("id");
+            var s_id = results.getString("s_id");
+            var type = results.getString("type");
+            var content = results.getString("content");
+            descendants.add(new NodeRecord(id_, s_id, type, content));
+        }
+        return descendants;
+    }
+
+    public List<NodeRecord> getAncestors(long id) throws SQLException {
+        var results = conn.createStatement().executeQuery(String.format("""
+                WITH RECURSIVE descendants AS (
+                    SELECT e.to_ as id
+                    FROM Edge as e
+                    WHERE e.to_ = %s
+                    UNION ALL
+                    SELECT e.from_ as id
+                    FROM Edge as e
+                    INNER JOIN descendants AS d
+                    ON e.to_ = d.id
                 ) SELECT * FROM descendants NATURAL JOIN Node
                     """,
                 String.valueOf(id)));
