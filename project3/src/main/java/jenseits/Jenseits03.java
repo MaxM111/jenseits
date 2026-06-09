@@ -68,12 +68,12 @@ public class Jenseits03 implements AutoCloseable {
     public List<NodeRecord> getDescendants(long id) throws SQLException {
         var results = conn.createStatement().executeQuery(String.format("""
                 WITH RECURSIVE descendants AS (
-                    SELECT e.to_ as id
-                    FROM Edge as e
+                    SELECT e.to_ AS id
+                    FROM Edge AS e
                     WHERE e.from_ = %s
                     UNION ALL
-                    SELECT e.to_ as id
-                    FROM Edge as e
+                    SELECT e.to_ AS id
+                    FROM Edge AS e
                     INNER JOIN descendants AS d
                     ON e.from_ = d.id
                 ) SELECT * FROM descendants NATURAL JOIN Node
@@ -94,12 +94,12 @@ public class Jenseits03 implements AutoCloseable {
     public List<NodeRecord> getAncestors(long id) throws SQLException {
         var results = conn.createStatement().executeQuery(String.format("""
                 WITH RECURSIVE descendants AS (
-                    SELECT e.to_ as id
-                    FROM Edge as e
+                    SELECT e.to_ AS id
+                    FROM Edge AS e
                     WHERE e.to_ = %s
                     UNION ALL
-                    SELECT e.from_ as id
-                    FROM Edge as e
+                    SELECT e.from_ AS id
+                    FROM Edge AS e
                     INNER JOIN descendants AS d
                     ON e.to_ = d.id
                 ) SELECT * FROM descendants NATURAL JOIN Node
