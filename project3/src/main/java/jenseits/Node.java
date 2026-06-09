@@ -106,6 +106,15 @@ public class Node {
             String year = attributes.getOrDefault("value", "null");
             String venue = this.parent.attributes.getOrDefault("name", "null");
             s_id = venue + "_" + year;
+        } else if (tag.equals("article")) {
+            var key = attributes.get("key");
+            if (key == null) {
+                IO.println("warning: <article> does not have attribute `key`, not inserting into DB");
+                s_id = "null";
+            } else {
+                var parts = key.split("/");
+                s_id = parts[parts.length - 1];
+            }
         } else {
             s_id = "null";
         }
