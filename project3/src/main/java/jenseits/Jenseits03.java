@@ -94,7 +94,7 @@ public class Jenseits03 implements AutoCloseable {
     public List<NodeRecord> getAncestors(long id) throws SQLException {
         var results = conn.createStatement().executeQuery(String.format("""
                 WITH RECURSIVE descendants AS (
-                    SELECT e.to_ AS id
+                    SELECT e.from_ AS id
                     FROM Edge AS e
                     WHERE e.to_ = %s
                     UNION ALL
