@@ -36,13 +36,18 @@ public class Jenseits03 implements AutoCloseable {
             var ancestors = obj.getAncestors(2); // Author Daniel Ulrich Schmitt has ID 2
             pprintNodeRecords("The ancestors of Author Daniel Ulrich Schmitt are", ancestors);
 
-            var psiblings1 = obj.getPrecedingSibling(1); // 1 is ID of "SchmittKAMM23"
+            var psiblings1 = obj.getPrecedingSiblings(1); // 1 is ID of "SchmittKAMM23"
             pprintNodeRecords("The p-siblings of SchmittKAMM23 are", psiblings1);
-            // TODO: fsibling
 
-            var psiblings50 = obj.getPrecedingSibling(50); // is ID of "SchalerHS23"
+            var fsiblings1 = obj.getFollowingSiblings(1); // 1 is ID of "SchmittKAMM23"
+            pprintNodeRecords("The f-siblings of SchmittKAMM23 are", fsiblings1);
+
+            var psiblings50 = obj.getPrecedingSiblings(50); // is ID of "SchalerHS23"
             pprintNodeRecords("The p-siblings of SchalerHS23 are", psiblings50);
-            // TODO: fsibling
+
+            var fsiblings50 = obj.getFollowingSiblings(50); // is ID of "SchalerHS23"
+            pprintNodeRecords("The f-siblings of SchalerHS23 are", fsiblings50);
+
         }
 
     }
@@ -73,7 +78,7 @@ public class Jenseits03 implements AutoCloseable {
      *
      * @throws SQLException
      */
-    public List<NodeRecord> getPrecedingSibling(long id) throws SQLException {
+    public List<NodeRecord> getPrecedingSiblings(long id) throws SQLException {
         // preceding siblings are siblings with ID < id
         var results = conn.createStatement().executeQuery(String.format("""
                 SELECT *
@@ -156,6 +161,37 @@ public class Jenseits03 implements AutoCloseable {
             descendants.add(new NodeRecord(id_, s_id, type, content));
         }
         return descendants;
+    }
+
+    public List<NodeRecord> getFollowingSiblings(long id) throws SQLException {
+        var results = conn.createStatement().executeQuery(String.format("""
+                WITH parent AS (
+                    SELECT e.from_ AS id
+                    FROM Edge AS e
+                    WHERE e.to_ = %s
+                ),
+                siblings AS (
+                    SELECT e.to_ AS id
+                    FROM Edge AS e
+                    INNER JOIN parent AS p
+                    ON e.from_ = p.id
+                )
+                SELECT *
+                FROM siblings NATURAL JOIN Node
+                WHERE Node.id > %s
+                    """,
+                String.valueOf(id),
+                String.valueOf(id)));
+
+        List<NodeRecord> siblings = new ArrayList<>();
+        while (results.next()) {
+            var id_ = results.getLong("id");
+            var s_id = results.getString("s_id");
+            var type = results.getString("type");
+            var content = results.getString("content");
+            siblings.add(new NodeRecord(id_, s_id, type, content));
+        }
+        return siblings;
     }
 
     public record NodeRecord(long id, String s_id, String type, String content) {
