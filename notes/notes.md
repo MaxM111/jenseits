@@ -88,3 +88,24 @@ $$dom(R) = \prod_{a \in A} dom(a)$$
   - man braucht nicht die letzten zwei "fields" kind(v) und name(v), so wäre es vollständig, aber für die Aufgabe erwartet nur das Konzept (also pre-/postorder und parent)
 - Implementiere in Aufgabe erst mit Infinity und 0 als bounds
   - Später wird dann eine Optimierung implementiert
+
+- Prüfungsrelevant:
+  - Edge Modell erklären/manuell überführen
+  - Annotationen erklären können
+  - Für gute Note, eine der Optimierungen (meist wählbar)
+
+## Graphen
+- Wichtige Fragen: Erreichbarkeit & Zentralität. Fokus wird auf Zentralität gelegt.
+- Informationsbedürfnisse sind möglich, aber nicht schön und nicht effizient (folie 5)
+- InDegree
+  - Relevanz: Bsp: Erfolg eines Videos ist Anzahl der Aufrufe
+  - Warum nicht genügend?: Leicht fälschbar (likes kaufen, Bots...), aber erhöht nicht die Wichtigkeit.
+    - auch: Zitieren in Wissenschaft: Z.b. es könnte wichtig sein wer einen zitiert als wie viele
+- PageRank
+  - (Algorithmus der Google groß gemacht hat)
+  - empfohlener approach
+  - nur gerichtete Graphen
+  - zu Beginn initialisiere Page Rank mit 1/n für n Knoten, sodass die Summe der PageRanks 1 ergibt.
+  - d := Dämpfungs-faktor (z.b. 0.8), N := |V| => (1 - d) / N erhöht Page rank ein wenig (damit er niemals 0 ist, denn wenn der Knoten keine eingehenden Kanten hat, dann würde er sosnst Pagerank = 0 haben)
+  - PR_j = Page Rank von Knoten j, C_j := ausgehende Kanten von Knoten j => Formel macht Knoten die exklusiv von anderen Knoten erreichbar wichtig..
+  - Erkläre bei Prüfung PageRank an einem Bsp Graph mit einer Runde und was dieser Dämpfungsfaktor ist
