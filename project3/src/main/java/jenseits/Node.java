@@ -20,6 +20,7 @@ public class Node {
     private Node parent;
     private List<Node> children;
     private String content; // can be null
+    private long postorder;
 
     /**
      * Construct a new Node.
@@ -84,6 +85,39 @@ public class Node {
         return this.id;
     }
 
+    public List<Node> getChildren() {
+        return children;
+    }
+
+    public void setPostorder(long postorder) {
+        this.postorder = postorder;
+    }
+
+    public String create_s_id() {
+        String s_id;
+        if (tag.equals("bib")) {
+            s_id = "bib";
+        } else if (tag.equals("venue")) {
+            s_id = attributes.getOrDefault("name", "null");
+        } else if (tag.equals("publishingYear")) {
+            String year = attributes.getOrDefault("value", "null");
+            String venue = this.parent.attributes.getOrDefault("name", "null");
+            s_id = venue + "_" + year;
+        } else if (attributes.containsKey("key")) {
+            var key = attributes.get("key");
+            if (key == null) {
+                IO.println("warning: publication does not have attribute `key`, not inserting into DB");
+                s_id = "null";
+            } else {
+                var parts = key.split("/");
+                s_id = parts[parts.length - 1];
+            }
+        } else {
+            s_id = "null";
+        }
+        return s_id;
+    }
+
     /*
      * Converts the XML subtree into the edge model.
      */
@@ -112,30 +146,9 @@ public class Node {
     private void insertSubtreeToEdgeModel(PreparedStatement nodeInserter, PreparedStatement edgeInserter,
             BatchCounter counter)
             throws SQLException {
-        String s_id;
-        if (tag.equals("bib")) {
-            s_id = "bib";
-        } else if (tag.equals("venue")) {
-            s_id = attributes.getOrDefault("name", "null");
-        } else if (tag.equals("publishingYear")) {
-            String year = attributes.getOrDefault("value", "null");
-            String venue = this.parent.attributes.getOrDefault("name", "null");
-            s_id = venue + "_" + year;
-        } else if (attributes.containsKey("key")) {
-            var key = attributes.get("key");
-            if (key == null) {
-                IO.println("warning: publication does not have attribute `key`, not inserting into DB");
-                s_id = "null";
-            } else {
-                var parts = key.split("/");
-                s_id = parts[parts.length - 1];
-            }
-        } else {
-            s_id = "null";
-        }
 
         nodeInserter.setLong(1, this.id);
-        nodeInserter.setString(2, s_id);
+        nodeInserter.setString(2, create_s_id());
         nodeInserter.setString(3, this.tag);
         nodeInserter.setString(4, this.content == null ? "null" : this.content);
         nodeInserter.addBatch();
@@ -164,6 +177,53 @@ public class Node {
             }
 
             child.insertSubtreeToEdgeModel(nodeInserter, edgeInserter, counter);
+        }
+    }
+
+    public void toAccel(Connection conn) throws SQLException {
+        var accelInserter = conn.prepareStatement("INSERT INTO accel VALUES (?, ?, ?, ?, ?, ?)");
+        var contentInserter = conn.prepareStatement("INSERT INTO content VALUES (?, ?)");
+
+        // we use node counter for accel inserter, edge counter for content inserter
+        var counter = new BatchCounter(10_000);
+        insertSubtreeIntoAccel(accelInserter, contentInserter, counter);
+
+        if (counter.nodeCounter > 0) {
+            accelInserter.executeBatch();
+        }
+        if (counter.edgeCounter > 0) {
+            contentInserter.executeBatch();
+        }
+        conn.commit();
+    }
+
+    private void insertSubtreeIntoAccel(PreparedStatement accelInserter, PreparedStatement contentInserter,
+            BatchCounter counter) throws SQLException {
+        accelInserter.setLong(1, this.id);
+        // accelInserter.setLong(2, this.preorder); // TODO:
+        accelInserter.setLong(3, this.postorder);
+        accelInserter.setLong(4, parent == null ? null : parent.getID());
+        accelInserter.setString(5, this.tag);
+        accelInserter.setString(6, create_s_id());
+        accelInserter.addBatch();
+        counter.incrementNodeCounter();
+
+        if (counter.nodeCounter > 0) {
+            accelInserter.executeBatch();
+        }
+
+        if (this.content != null) {
+            contentInserter.setLong(1, this.id);
+            contentInserter.setString(2, this.content);
+            counter.incrementEdgeCounter();
+
+            if (counter.edgeCounter > 0) {
+                contentInserter.executeBatch();
+            }
+        }
+
+        for (var child : children) {
+            child.insertSubtreeIntoAccel(accelInserter, contentInserter, counter);
         }
     }
 

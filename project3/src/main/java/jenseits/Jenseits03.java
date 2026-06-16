@@ -252,4 +252,31 @@ public class Jenseits03 implements AutoCloseable {
         // statement.execute("CREATE TABLE attribute(id BIGINT, text VARCHAR(512))");
         conn.commit();
     }
+
+    /*
+     * Annotate the tree with preorder and postorder and import it into the database
+     * into the accel table.
+     */
+    public void importAccel(Node root) throws SQLException {
+        // annotatePreorder(root);
+        annotatePostorder(root);
+        createAccelTable();
+        root.toAccel(conn);
+        conn.commit();
+    }
+
+    public void annotatePostorder(Node root) throws SQLException {
+        annotatePostorderSubtree(root, 0);
+    }
+
+    // "Jeder Knoten vor seinem Vater und vor seinem rechten Nachbar".
+    private long annotatePostorderSubtree(Node subtree, long counter) {
+        for (var child : subtree.getChildren()) {
+            // annotate from left to right => "Jeder Knoten vor seinem rechten Nachbar"
+            counter = annotatePostorderSubtree(child, counter);
+        }
+        // annotate parent after annotating children => "Jeder Knoten vor seinem Vater"
+        subtree.setPostorder(counter++);
+        return counter;
+    }
 }
