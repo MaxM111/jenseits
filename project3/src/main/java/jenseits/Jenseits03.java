@@ -328,8 +328,8 @@ public class Jenseits03 implements AutoCloseable {
         return switch (axis) {
             case Ancestor -> xpathAncestor(id);
             case Descendant -> xpathDescendant(id);
-            case FollowingSibling -> xpathPSibling(id);
-            case PrecedingSibling -> xpathFSibling(id);
+            case FollowingSibling -> xpathFSibling(id);
+            case PrecedingSibling -> xpathPSibling(id);
         };
     }
 
