@@ -61,7 +61,7 @@ public class Jenseits03 implements AutoCloseable {
 
     public Jenseits03() throws Exception {
         conn = DB.getConnection(Database.POSTGRESQL);
-        conn.setAutoCommit(true);
+        conn.setAutoCommit(false);
     }
 
     public Connection getConn() {

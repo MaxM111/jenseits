@@ -96,10 +96,21 @@ public class Node {
         statement.close();
         var nodeInserter = conn.prepareStatement("INSERT INTO Node VALUES (?, ?, ?, ?)");
         var edgeInserter = conn.prepareStatement("INSERT INTO Edge VALUES (?, ?)");
-        insertSubtreeToEdgeModel(nodeInserter, edgeInserter);
+
+        var counter = new BatchCounter(10_000);
+        insertSubtreeToEdgeModel(nodeInserter, edgeInserter, counter);
+
+        if (counter.nodeCounter > 0) {
+            nodeInserter.executeBatch();
+        }
+        if (counter.edgeCounter > 0) {
+            edgeInserter.executeBatch();
+        }
+        conn.commit();
     }
 
-    private void insertSubtreeToEdgeModel(PreparedStatement nodeInserter, PreparedStatement edgeInserter)
+    private void insertSubtreeToEdgeModel(PreparedStatement nodeInserter, PreparedStatement edgeInserter,
+            BatchCounter counter)
             throws SQLException {
         String s_id;
         if (tag.equals("bib")) {
@@ -127,18 +138,32 @@ public class Node {
         nodeInserter.setString(2, s_id);
         nodeInserter.setString(3, this.tag);
         nodeInserter.setString(4, this.content == null ? "null" : this.content);
-        nodeInserter.execute();
+        nodeInserter.addBatch();
 
-        insertChildrenIntoEdgeModel(nodeInserter, edgeInserter);
+        counter.incrementNodeCounter();
+        if (counter.reachedNodeThreshold()) {
+            nodeInserter.executeBatch();
+            counter.resetNodeCounter();
+        }
+
+        insertChildrenIntoEdgeModel(nodeInserter, edgeInserter, counter);
     }
 
-    private void insertChildrenIntoEdgeModel(PreparedStatement nodeInserter, PreparedStatement edgeInserter)
+    private void insertChildrenIntoEdgeModel(PreparedStatement nodeInserter, PreparedStatement edgeInserter,
+            BatchCounter counter)
             throws SQLException {
         for (var child : children) {
             edgeInserter.setLong(1, this.id);
             edgeInserter.setLong(2, child.getID());
-            edgeInserter.execute();
-            child.insertSubtreeToEdgeModel(nodeInserter, edgeInserter);
+            edgeInserter.addBatch();
+
+            counter.incrementEdgeCounter();
+            if (counter.reachedEdgeThreshold()) {
+                edgeInserter.executeBatch();
+                counter.resetEdgeCounter();
+            }
+
+            child.insertSubtreeToEdgeModel(nodeInserter, edgeInserter, counter);
         }
     }
 
@@ -178,6 +203,41 @@ public class Node {
             return ((Node) other).getID() == this.id;
         } else {
             return false;
+        }
+    }
+
+    private class BatchCounter {
+        int nodeCounter;
+        int edgeCounter;
+        int threshold;
+
+        BatchCounter(int threshold) {
+            nodeCounter = 0;
+            edgeCounter = 0;
+        }
+
+        void resetNodeCounter() {
+            nodeCounter = 0;
+        }
+
+        void resetEdgeCounter() {
+            edgeCounter = 0;
+        }
+
+        void incrementNodeCounter() {
+            nodeCounter++;
+        }
+
+        void incrementEdgeCounter() {
+            edgeCounter++;
+        }
+
+        boolean reachedNodeThreshold() {
+            return nodeCounter > threshold;
+        }
+
+        boolean reachedEdgeThreshold() {
+            return edgeCounter > threshold;
         }
     }
 }
