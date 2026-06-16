@@ -106,10 +106,10 @@ public class Node {
             String year = attributes.getOrDefault("value", "null");
             String venue = this.parent.attributes.getOrDefault("name", "null");
             s_id = venue + "_" + year;
-        } else if (tag.equals("article")) {
+        } else if (attributes.containsKey("key")) {
             var key = attributes.get("key");
             if (key == null) {
-                IO.println("warning: <article> does not have attribute `key`, not inserting into DB");
+                IO.println("warning: publication does not have attribute `key`, not inserting into DB");
                 s_id = "null";
             } else {
                 var parts = key.split("/");
@@ -145,7 +145,8 @@ public class Node {
             s += " " + key + "=\"" + this.attributes.get(key) + '"';
         }
         s += ">";
-        if (this.tag.equals("article") || this.tag.equals("bib") || this.tag.equals("inproceedings")) {
+        if (this.tag.equals("bib") || this.tag.equals("publishingYear") || this.tag.equals("venue")
+                || this.attributes.containsKey("key")) {
             s += "\n";
         }
 
