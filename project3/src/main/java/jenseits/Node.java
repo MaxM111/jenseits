@@ -3,6 +3,7 @@ package jenseits;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.SQLType;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -207,7 +208,11 @@ public class Node {
         accelInserter.setLong(1, this.id);
         accelInserter.setLong(2, this.preorder);
         accelInserter.setLong(3, this.postorder);
-        accelInserter.setLong(4, parent == null ? null : parent.getID());
+        if (parent == null) {
+            accelInserter.setNull(4, java.sql.Types.BIGINT);
+        } else {
+            accelInserter.setLong(4, parent.getID());
+        }
         accelInserter.setString(5, this.tag);
         accelInserter.setString(6, create_s_id());
         accelInserter.addBatch();
