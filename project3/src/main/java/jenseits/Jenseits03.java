@@ -233,4 +233,23 @@ public class Jenseits03 implements AutoCloseable {
                         .collect(Collectors.joining(",\n"))
                 + "\n]");
     }
+
+    public void createAccelTable() throws SQLException {
+        var statement = conn.createStatement();
+        statement.execute("DROP TABLE IF EXISTS accel, content");
+        statement.execute("""
+                CREATE TABLE accel (
+                    id BIGINT NOT NULL,
+                    pre BIGINT NOT NULL,
+                    post BIGINT NOT NULL,
+                    parent BIGINT,
+                    type VARCHAR(50) NOT NULL,
+                    s_id VARCHAR(100)
+                )
+                """);
+        statement.execute("CREATE TABLE content (id BIGINT, text VARCHAR(512))");
+        // NOTE: why this?
+        // statement.execute("CREATE TABLE attribute(id BIGINT, text VARCHAR(512))");
+        conn.commit();
+    }
 }
