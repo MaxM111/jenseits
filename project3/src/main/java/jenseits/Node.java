@@ -187,7 +187,7 @@ public class Node {
     }
 
     public void toAccel(Connection conn) throws SQLException {
-        var accelInserter = conn.prepareStatement("INSERT INTO accel VALUES (?, ?, ?, ?, ?, ?)");
+        var accelInserter = conn.prepareStatement("INSERT INTO accel VALUES (?, ?, ?, ?)");
         var contentInserter = conn.prepareStatement("INSERT INTO content VALUES (?, ?)");
         var attributeInserter = conn.prepareStatement("INSERT INTO attribute VALUES (?, ?)");
 
