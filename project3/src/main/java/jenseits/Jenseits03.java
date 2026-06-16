@@ -265,12 +265,24 @@ public class Jenseits03 implements AutoCloseable {
         conn.commit();
     }
 
-    public void annotatePostorder(Node root) throws SQLException {
+    public static void annotatePreorder(Node root) throws SQLException {
+        annotatePreorderSubtree(root, 0);
+    }
+
+    private static long annotatePreorderSubtree(Node subtree, long counter) {
+        subtree.setPostorder(counter++);
+        for (var child : subtree.getChildren()) {
+            counter = annotatePreorderSubtree(child, counter);
+        }
+        return counter;
+    }
+
+    public static void annotatePostorder(Node root) throws SQLException {
         annotatePostorderSubtree(root, 0);
     }
 
     // "Jeder Knoten vor seinem Vater und vor seinem rechten Nachbar".
-    private long annotatePostorderSubtree(Node subtree, long counter) {
+    private static long annotatePostorderSubtree(Node subtree, long counter) {
         for (var child : subtree.getChildren()) {
             // annotate from left to right => "Jeder Knoten vor seinem rechten Nachbar"
             counter = annotatePostorderSubtree(child, counter);

@@ -20,6 +20,7 @@ public class Node {
     private Node parent;
     private List<Node> children;
     private String content; // can be null
+    private long preorder;
     private long postorder;
 
     /**
@@ -87,6 +88,10 @@ public class Node {
 
     public List<Node> getChildren() {
         return children;
+    }
+
+    public void setPreorder(long preorder) {
+        this.preorder = preorder;
     }
 
     public void setPostorder(long postorder) {
@@ -200,7 +205,7 @@ public class Node {
     private void insertSubtreeIntoAccel(PreparedStatement accelInserter, PreparedStatement contentInserter,
             BatchCounter counter) throws SQLException {
         accelInserter.setLong(1, this.id);
-        // accelInserter.setLong(2, this.preorder); // TODO:
+        accelInserter.setLong(2, this.preorder);
         accelInserter.setLong(3, this.postorder);
         accelInserter.setLong(4, parent == null ? null : parent.getID());
         accelInserter.setString(5, this.tag);
