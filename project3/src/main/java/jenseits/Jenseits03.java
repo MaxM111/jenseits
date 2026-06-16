@@ -38,12 +38,16 @@ public class Jenseits03 implements AutoCloseable {
 
             var psiblings1 = obj.getPrecedingSiblings(1); // 1 is ID of "SchmittKAMM23"
             pprintNodeRecords("The p-siblings of SchmittKAMM23 are", psiblings1);
+            var xpathPSibling1 = obj.xpath(1, XPathAxis.PrecedingSibling);
+            pprintNodeRecords("XPath Axis p-siblings of SchmittKAMM23", xpathPSibling1);
 
             var fsiblings1 = obj.getFollowingSiblings(1); // 1 is ID of "SchmittKAMM23"
             pprintNodeRecords("The f-siblings of SchmittKAMM23 are", fsiblings1);
 
             var psiblings50 = obj.getPrecedingSiblings(49); // is ID of "SchalerHS23"
             pprintNodeRecords("The p-siblings of SchalerHS23 are", psiblings50);
+            var xpathPSibling50 = obj.xpath(49, XPathAxis.PrecedingSibling);
+            pprintNodeRecords("XPath Axis p-siblings of SchalerHS23", xpathPSibling50);
 
             var fsiblings50 = obj.getFollowingSiblings(49); // is ID of "SchalerHS23"
             pprintNodeRecords("The f-siblings of SchalerHS23 are", fsiblings50);
@@ -391,8 +395,21 @@ public class Jenseits03 implements AutoCloseable {
         return new ArrayList<>();
     }
 
+    // For a node v, ancestors are:
+    // -----pre----------------post-----------parent-----
+    // <[0, preorder(v)), [0, postorder(v)), parent(v)>
     private List<NodeRecord> xpathPSibling(long id) throws SQLException {
-        return new ArrayList<>();
+        var results = conn.createStatement().executeQuery(String.format("""
+                SELECT id
+                FROM accel
+                WHERE pre < preorder(%d) AND post < postorder(%d) AND parent = parent(%s)
+                    """, id, id, id));
+        List<NodeRecord> ids = new ArrayList<>();
+        while (results.next()) {
+            var node = new NodeRecord(results.getLong("id"), "", "", "");
+            ids.add(node);
+        }
+        return ids;
     }
 
     private List<NodeRecord> xpathFSibling(long id) throws SQLException {
