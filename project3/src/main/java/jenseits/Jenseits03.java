@@ -56,6 +56,8 @@ public class Jenseits03 implements AutoCloseable {
 
             var fsiblings50 = obj.getFollowingSiblings(49); // is ID of "SchalerHS23"
             pprintNodeRecords("The f-siblings of SchalerHS23 are", fsiblings50);
+            var xpathFSibling50 = obj.xpath(49, XPathAxis.FollowingSibling);
+            pprintNodeRecords("XPath Axis f-siblings of SchalerHS23", xpathFSibling50);
 
             // Phase 2 Bullet Point 1
 
@@ -396,7 +398,7 @@ public class Jenseits03 implements AutoCloseable {
         return ids;
     }
 
-    // For a node v, ancestors are:
+    // For a node v, descendants are:
     // -----pre----------------post-----------parent-----
     // <[preorder(v), inf, (0, postorder(v)), * >
     private List<NodeRecord> xpathDescendant(long id) throws SQLException {
@@ -414,7 +416,7 @@ public class Jenseits03 implements AutoCloseable {
         return ids;
     }
 
-    // For a node v, ancestors are:
+    // For a node v, preceding siblings are:
     // -----pre----------------post-----------parent-----
     // <[0, preorder(v)), [0, postorder(v)), parent(v)>
     private List<NodeRecord> xpathPSibling(long id) throws SQLException {
@@ -431,7 +433,7 @@ public class Jenseits03 implements AutoCloseable {
         return ids;
     }
 
-    // For a node v, ancestors are:
+    // For a node v, following siblingss are:
     // -----pre----------------post-----------parent-----
     // <(preoder(v),inf), (postorder(v),inf), parent(v)>
     private List<NodeRecord> xpathFSibling(long id) throws SQLException {
