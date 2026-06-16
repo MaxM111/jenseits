@@ -1,7 +1,5 @@
 package jenseits;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -63,6 +61,8 @@ public class Jenseits03 implements AutoCloseable {
 
             System.out.println("Starting Import as Edge Model");
             root.toEdgeModel(obj.getConn());
+
+            obj.importAccel(tree);
         }
 
     }
@@ -258,7 +258,7 @@ public class Jenseits03 implements AutoCloseable {
      * into the accel table.
      */
     public void importAccel(Node root) throws SQLException {
-        // annotatePreorder(root);
+        annotatePreorder(root);
         annotatePostorder(root);
         createAccelTable();
         root.toAccel(conn);
