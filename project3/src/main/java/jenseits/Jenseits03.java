@@ -27,9 +27,12 @@ public class Jenseits03 implements AutoCloseable {
         IO.println(tree.toString());
         try (var obj = new Jenseits03()) {
             tree.toEdgeModel(obj.getConn());
+            obj.importAccel(tree);
 
             var descendants = obj.getDescendants(17); // 17 is ID of "vldb_2023"
             pprintNodeRecords("The descendants of vldb_2023 are", descendants);
+            var xpathDescendant = obj.xpath(17, XPathAxis.Descendant);
+            pprintNodeRecords("XPath Axis Descendant", xpathDescendant);
 
             var ancestors = obj.getAncestors(2); // Author Daniel Ulrich Schmitt has ID 2
             pprintNodeRecords("The ancestors of Author Daniel Ulrich Schmitt are", ancestors);
@@ -50,26 +53,27 @@ public class Jenseits03 implements AutoCloseable {
 
             // Phase 2 Bullet Point 1
 
-            SAXParser parser2 = factory.newSAXParser();
-            var handler2 = new DBLPHandler();
-            parser2.parse("dblp.xml", handler2);
+            /*
+             * SAXParser parser2 = factory.newSAXParser();
+             * var handler2 = new DBLPHandler();
+             * parser2.parse("dblp.xml", handler2);
+             * 
+             * var root = handler2.getTree();
+             * var augstenCounts = obj.countAugstenPublications(root);
+             * IO.println("Nikolaus Augsten publications per venue: " + augstenCounts);
+             * 
+             * IO.println("Writing the XML");
+             * var mySmallBibXml = root.toString();
+             * try (var writer = new FileWriter("my_small_bib.xml")) {
+             * writer.write(mySmallBibXml);
+             * }
+             * 
+             * System.out.println("Starting Import as Edge Model");
+             * root.toEdgeModel(obj.getConn());
+             * IO.println("Node tuples: " + obj.countTuples("Node"));
+             * IO.println("Edge tuples: " + obj.countTuples("Edge"));
+             */
 
-            var root = handler2.getTree();
-            var augstenCounts = obj.countAugstenPublications(root);
-            IO.println("Nikolaus Augsten publications per venue: " + augstenCounts);
-
-            IO.println("Writing the XML");
-            var mySmallBibXml = root.toString();
-            try (var writer = new FileWriter("my_small_bib.xml")) {
-                writer.write(mySmallBibXml);
-            }
-
-            System.out.println("Starting Import as Edge Model");
-            root.toEdgeModel(obj.getConn());
-            IO.println("Node tuples: " + obj.countTuples("Node"));
-            IO.println("Edge tuples: " + obj.countTuples("Edge"));
-
-            obj.importAccel(tree);
         }
 
     }
@@ -377,7 +381,8 @@ public class Jenseits03 implements AutoCloseable {
         var results = conn.createStatement().executeQuery(String.format("""
                 SELECT id
                 FROM accel
-                WHERE pre < preorder(%d) AND postorder(%d) < post
+                WHERE pre < preorder(%d)
+                AND postorder(%d) < post
                     """, id, id));
         List<NodeRecord> ids = new ArrayList<>();
         while (results.next()) {
@@ -388,7 +393,18 @@ public class Jenseits03 implements AutoCloseable {
     }
 
     private List<NodeRecord> xpathDescendant(long id) throws SQLException {
-        return new ArrayList<>();
+        var results = conn.createStatement().executeQuery(String.format("""
+                SELECT id
+                FROM accel
+                WHERE pre > preorder(%d)
+                AND post < postorder(%d)
+                    """, id, id));
+        List<NodeRecord> ids = new ArrayList<>();
+        while (results.next()) {
+            var node = new NodeRecord(results.getLong("id"), "", "", "");
+            ids.add(node);
+        }
+        return ids;
     }
 
     private List<NodeRecord> xpathPSibling(long id) throws SQLException {
