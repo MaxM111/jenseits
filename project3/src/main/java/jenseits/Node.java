@@ -225,6 +225,7 @@ public class Node {
         if (this.content != null) {
             contentInserter.setLong(1, this.id);
             contentInserter.setString(2, this.content);
+            contentInserter.addBatch();
             counter.incrementEdgeCounter();
 
             if (counter.edgeCounter > 0) {
