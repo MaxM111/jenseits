@@ -33,6 +33,8 @@ public class Jenseits03 implements AutoCloseable {
 
             var ancestors = obj.getAncestors(2); // Author Daniel Ulrich Schmitt has ID 2
             pprintNodeRecords("The ancestors of Author Daniel Ulrich Schmitt are", ancestors);
+            var xpathAncestor = obj.xpath(2, XPathAxis.Ancestor);
+            pprintNodeRecords("XPath Axis Ancestor", xpathAncestor);
 
             var psiblings1 = obj.getPrecedingSiblings(1); // 1 is ID of "SchmittKAMM23"
             pprintNodeRecords("The p-siblings of SchmittKAMM23 are", psiblings1);
@@ -372,11 +374,17 @@ public class Jenseits03 implements AutoCloseable {
     // -----pre----------------post-----------parent-----
     // <[0, preorder(v)), (postorder(v), inf), * >
     private List<NodeRecord> xpathAncestor(long id) throws SQLException {
-        // conn.createStatement().execute("""
-        // FROM accel
-        // WHERE pre < (pre(v)) AND
-        // """);
-        return new ArrayList<>();
+        var results = conn.createStatement().executeQuery(String.format("""
+                SELECT id
+                FROM accel
+                WHERE pre < preorder(%d) AND postorder(%d) < post
+                    """, id, id));
+        List<NodeRecord> ids = new ArrayList<>();
+        while (results.next()) {
+            var node = new NodeRecord(results.getLong("id"), "", "", "");
+            ids.add(node);
+        }
+        return ids;
     }
 
     private List<NodeRecord> xpathDescendant(long id) throws SQLException {
