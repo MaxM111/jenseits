@@ -1,5 +1,8 @@
 package jenseits;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -51,7 +54,14 @@ public class Jenseits03 implements AutoCloseable {
             parser2.parse("dblp.xml", handler2);
 
             var root = handler2.getTree();
-            System.out.println("Starting Import");
+
+            IO.println("Writing the XML");
+            var mySmallBibXml = root.toString();
+            try (var writer = new FileWriter("my_small_bib.xml")) {
+                writer.write(mySmallBibXml);
+            }
+
+            System.out.println("Starting Import as Edge Model");
             root.toEdgeModel(obj.getConn());
         }
 
