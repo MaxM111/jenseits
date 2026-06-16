@@ -322,4 +322,36 @@ public class Jenseits03 implements AutoCloseable {
         subtree.setPostorder(counter++);
         return counter;
     }
+
+    public List<NodeRecord> xpath(long id, XPathAxis axis) throws SQLException {
+        return switch (axis) {
+            case Ancestor -> xpathAncestor(id);
+            case Descendant -> xpathDescendant(id);
+            case FollowingSibling -> xpathPSibling(id);
+            case PrecedingSibling -> xpathFSibling(id);
+        };
+    }
+
+    private List<NodeRecord> xpathAncestor(long id) throws SQLException {
+        return new ArrayList<>();
+    }
+
+    private List<NodeRecord> xpathDescendant(long id) throws SQLException {
+        return new ArrayList<>();
+    }
+
+    private List<NodeRecord> xpathPSibling(long id) throws SQLException {
+        return new ArrayList<>();
+    }
+
+    private List<NodeRecord> xpathFSibling(long id) throws SQLException {
+        return new ArrayList<>();
+    }
+
+    private enum XPathAxis {
+        Ancestor,
+        Descendant,
+        FollowingSibling,
+        PrecedingSibling,
+    }
 }
