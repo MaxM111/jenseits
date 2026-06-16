@@ -1,6 +1,7 @@
 package jenseits;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -92,11 +93,14 @@ public class Node {
         statement.execute(
                 "CREATE TABLE Node (id BIGINT NOT NULL, s_id VARCHAR(100), type VARCHAR(50) NOT NULL, content VARCHAR(512))");
         statement.execute("CREATE TABLE Edge (from_ BIGINT NOT NULL, to_ BIGINT NOT NULL)");
-        insertSubtreeToEdgeModel(statement);
         statement.close();
+        var nodeInserter = conn.prepareStatement("INSERT INTO Node VALUES (?, ?, ?, ?)");
+        var edgeInserter = conn.prepareStatement("INSERT INTO Edge VALUES (?, ?)");
+        insertSubtreeToEdgeModel(nodeInserter, edgeInserter);
     }
 
-    private void insertSubtreeToEdgeModel(Statement statement) throws SQLException {
+    private void insertSubtreeToEdgeModel(PreparedStatement nodeInserter, PreparedStatement edgeInserter)
+            throws SQLException {
         String s_id;
         if (tag.equals("bib")) {
             s_id = "bib";
@@ -119,20 +123,22 @@ public class Node {
             s_id = "null";
         }
 
-        var query = String.format("INSERT INTO Node VALUES (%d, '%s', '%s', '%s')",
-                this.id,
-                s_id,
-                this.tag,
-                this.content == null ? "null" : this.content.replace("'", "''"));
-        statement.execute(query);
+        nodeInserter.setLong(1, this.id);
+        nodeInserter.setString(2, s_id);
+        nodeInserter.setString(3, this.tag);
+        nodeInserter.setString(4, this.content == null ? "null" : this.content);
+        nodeInserter.execute();
 
-        insertChildrenIntoEdgeModel(statement);
+        insertChildrenIntoEdgeModel(nodeInserter, edgeInserter);
     }
 
-    private void insertChildrenIntoEdgeModel(Statement statement) throws SQLException {
+    private void insertChildrenIntoEdgeModel(PreparedStatement nodeInserter, PreparedStatement edgeInserter)
+            throws SQLException {
         for (var child : children) {
-            statement.execute(String.format("INSERT INTO Edge VALUES (%d, %d)", this.id, child.getID()));
-            child.insertSubtreeToEdgeModel(statement);
+            edgeInserter.setLong(1, this.id);
+            edgeInserter.setLong(2, child.getID());
+            edgeInserter.execute();
+            child.insertSubtreeToEdgeModel(nodeInserter, edgeInserter);
         }
     }
 
