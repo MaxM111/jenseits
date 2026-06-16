@@ -260,7 +260,7 @@ public class Jenseits03 implements AutoCloseable {
 
     public void createAccelTable() throws SQLException {
         var statement = conn.createStatement();
-        statement.execute("DROP TABLE IF EXISTS accel, content");
+        statement.execute("DROP TABLE IF EXISTS accel, content, attribute");
         statement.execute("""
                 CREATE TABLE accel (
                     id BIGINT NOT NULL,
@@ -272,8 +272,7 @@ public class Jenseits03 implements AutoCloseable {
                 )
                 """);
         statement.execute("CREATE TABLE content (id BIGINT, text VARCHAR(512))");
-        // NOTE: why this?
-        // statement.execute("CREATE TABLE attribute(id BIGINT, text VARCHAR(512))");
+        statement.execute("CREATE TABLE attribute(id BIGINT, text VARCHAR(512))");
         conn.commit();
     }
 

@@ -189,22 +189,26 @@ public class Node {
     public void toAccel(Connection conn) throws SQLException {
         var accelInserter = conn.prepareStatement("INSERT INTO accel VALUES (?, ?, ?, ?, ?, ?)");
         var contentInserter = conn.prepareStatement("INSERT INTO content VALUES (?, ?)");
+        var attributeInserter = conn.prepareStatement("INSERT INTO attribute VALUES (?, ?)");
 
         // we use node counter for accel inserter, edge counter for content inserter
         var counter = new BatchCounter(10_000);
-        insertSubtreeIntoAccel(accelInserter, contentInserter, counter);
+        insertSubtreeIntoAccel(accelInserter, contentInserter, attributeInserter, counter);
 
-        if (counter.reachedNodeThreshold()) {
+        if (counter.nodeCounter > 0) {
             accelInserter.executeBatch();
         }
-        if (counter.reachedEdgeThreshold()) {
+        if (counter.edgeCounter > 0) {
             contentInserter.executeBatch();
+        }
+        if (counter.attributeCounter > 0) {
+            attributeInserter.executeBatch();
         }
         conn.commit();
     }
 
     private void insertSubtreeIntoAccel(PreparedStatement accelInserter, PreparedStatement contentInserter,
-            BatchCounter counter) throws SQLException {
+            PreparedStatement attributeInserter, BatchCounter counter) throws SQLException {
         accelInserter.setLong(1, this.id);
         accelInserter.setLong(2, this.preorder);
         accelInserter.setLong(3, this.postorder);
@@ -220,6 +224,7 @@ public class Node {
 
         if (counter.reachedNodeThreshold()) {
             accelInserter.executeBatch();
+            counter.resetNodeCounter();
         }
 
         if (this.content != null) {
@@ -230,11 +235,24 @@ public class Node {
 
             if (counter.reachedEdgeThreshold()) {
                 contentInserter.executeBatch();
+                counter.resetEdgeCounter();
+            }
+        }
+
+        for (var attribute : attributes.entrySet()) {
+            attributeInserter.setLong(1, this.id);
+            attributeInserter.setString(2, attribute.getKey() + "=" + attribute.getValue());
+            attributeInserter.addBatch();
+            counter.incrementAttributeCounter();
+
+            if (counter.reachedAttributeThreshold()) {
+                attributeInserter.executeBatch();
+                counter.resetAttributeCounter();
             }
         }
 
         for (var child : children) {
-            child.insertSubtreeIntoAccel(accelInserter, contentInserter, counter);
+            child.insertSubtreeIntoAccel(accelInserter, contentInserter, attributeInserter, counter);
         }
     }
 
@@ -280,11 +298,14 @@ public class Node {
     private class BatchCounter {
         int nodeCounter;
         int edgeCounter;
+        int attributeCounter;
         int threshold;
 
         BatchCounter(int threshold) {
             nodeCounter = 0;
             edgeCounter = 0;
+            attributeCounter = 0;
+            this.threshold = threshold;
         }
 
         void resetNodeCounter() {
@@ -295,6 +316,10 @@ public class Node {
             edgeCounter = 0;
         }
 
+        void resetAttributeCounter() {
+            attributeCounter = 0;
+        }
+
         void incrementNodeCounter() {
             nodeCounter++;
         }
@@ -303,12 +328,20 @@ public class Node {
             edgeCounter++;
         }
 
+        void incrementAttributeCounter() {
+            attributeCounter++;
+        }
+
         boolean reachedNodeThreshold() {
             return nodeCounter > threshold;
         }
 
         boolean reachedEdgeThreshold() {
             return edgeCounter > threshold;
+        }
+
+        boolean reachedAttributeThreshold() {
+            return attributeCounter > threshold;
         }
     }
 }
