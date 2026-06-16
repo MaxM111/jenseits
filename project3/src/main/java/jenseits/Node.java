@@ -194,10 +194,10 @@ public class Node {
         var counter = new BatchCounter(10_000);
         insertSubtreeIntoAccel(accelInserter, contentInserter, counter);
 
-        if (counter.nodeCounter > 0) {
+        if (counter.reachedNodeThreshold()) {
             accelInserter.executeBatch();
         }
-        if (counter.edgeCounter > 0) {
+        if (counter.reachedEdgeThreshold()) {
             contentInserter.executeBatch();
         }
         conn.commit();
@@ -218,7 +218,7 @@ public class Node {
         accelInserter.addBatch();
         counter.incrementNodeCounter();
 
-        if (counter.nodeCounter > 0) {
+        if (counter.reachedNodeThreshold()) {
             accelInserter.executeBatch();
         }
 
@@ -228,7 +228,7 @@ public class Node {
             contentInserter.addBatch();
             counter.incrementEdgeCounter();
 
-            if (counter.edgeCounter > 0) {
+            if (counter.reachedEdgeThreshold()) {
                 contentInserter.executeBatch();
             }
         }
