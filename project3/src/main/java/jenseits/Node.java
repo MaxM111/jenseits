@@ -217,8 +217,6 @@ public class Node {
         } else {
             accelInserter.setLong(4, parent.getID());
         }
-        accelInserter.setString(5, this.tag);
-        accelInserter.setString(6, create_s_id());
         accelInserter.addBatch();
         counter.incrementNodeCounter();
 

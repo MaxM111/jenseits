@@ -274,9 +274,7 @@ public class Jenseits03 implements AutoCloseable {
                     id BIGINT NOT NULL,
                     pre BIGINT NOT NULL,
                     post BIGINT NOT NULL,
-                    parent BIGINT,
-                    type VARCHAR(50) NOT NULL,
-                    s_id VARCHAR(100)
+                    parent BIGINT
                 )
                 """);
         statement.execute("CREATE TABLE content (id BIGINT, text VARCHAR(512))");
