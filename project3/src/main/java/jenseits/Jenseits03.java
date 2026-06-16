@@ -291,6 +291,7 @@ public class Jenseits03 implements AutoCloseable {
         annotatePostorder(root);
         createAccelTable();
         root.toAccel(conn);
+        createHelperFunctions();
         conn.commit();
     }
 
@@ -330,7 +331,51 @@ public class Jenseits03 implements AutoCloseable {
         };
     }
 
+    public void createHelperFunctions() throws SQLException {
+        var statement = conn.createStatement();
+        statement.execute("DROP FUNCTION IF EXISTS preorder, postorder, parent");
+        statement.execute("""
+                CREATE FUNCTION preorder(param BIGINT)
+                RETURNS BIGINT
+                LANGUAGE SQL STABLE
+                AS $$
+                SELECT pre
+                FROM accel AS a
+                WHERE a.id = param
+                $$
+                    """);
+
+        statement.execute("""
+                CREATE FUNCTION postorder(param BIGINT)
+                RETURNS BIGINT
+                LANGUAGE SQL STABLE
+                AS $$
+                SELECT post
+                FROM accel AS a
+                WHERE a.id = param
+                $$
+                    """);
+
+        statement.execute("""
+                CREATE FUNCTION parent(param BIGINT)
+                RETURNS BIGINT
+                LANGUAGE SQL STABLE
+                AS $$
+                SELECT parent
+                FROM accel AS a
+                WHERE a.id = param
+                $$
+                    """);
+    }
+
+    // For a node v, ancestors are:
+    // -----pre----------------post-----------parent-----
+    // <[0, preorder(v)), (postorder(v), inf), * >
     private List<NodeRecord> xpathAncestor(long id) throws SQLException {
+        // conn.createStatement().execute("""
+        // FROM accel
+        // WHERE pre < (pre(v)) AND
+        // """);
         return new ArrayList<>();
     }
 
