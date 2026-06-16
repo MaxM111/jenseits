@@ -270,7 +270,7 @@ public class Jenseits03 implements AutoCloseable {
     }
 
     private static long annotatePreorderSubtree(Node subtree, long counter) {
-        subtree.setPostorder(counter++);
+        subtree.setPreorder(counter++);
         for (var child : subtree.getChildren()) {
             counter = annotatePreorderSubtree(child, counter);
         }
