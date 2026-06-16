@@ -13,6 +13,10 @@ import jenseits.setup.*;
 
 public class Jenseits03 implements AutoCloseable {
     public static void main(String[] args) throws Exception {
+        System.setProperty("jdk.xml.entityExpansionLimit", "1000000000");
+        System.setProperty("jdk.xml.totalEntitySizeLimit", "1000000000");
+        System.setProperty("jdk.xml.maxGeneralEntitySizeLimit", "1000000000");
+
         SAXParserFactory factory = SAXParserFactory.newInstance();
         SAXParser parser = factory.newSAXParser();
         var handler = new DBLPHandler();
@@ -40,6 +44,15 @@ public class Jenseits03 implements AutoCloseable {
             var fsiblings50 = obj.getFollowingSiblings(49); // is ID of "SchalerHS23"
             pprintNodeRecords("The f-siblings of SchalerHS23 are", fsiblings50);
 
+            // Phase 2 Bullet Point 1
+
+            SAXParser parser2 = factory.newSAXParser();
+            var handler2 = new DBLPHandler();
+            parser2.parse("dblp.xml", handler2);
+
+            var root = handler2.getTree();
+            System.out.println("Starting Import");
+            root.toEdgeModel(obj.getConn());
         }
 
     }

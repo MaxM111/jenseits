@@ -7,9 +7,12 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import jenseits.setup.DB;
+
 public class DBLPHandler extends DefaultHandler {
     // special tags that require special handling
     private static final String BIB = "bib";
+    private static final String DBLP = "dblp";
     private static final String YEAR = "year";
     private static final String EE = "ee";
 
@@ -69,7 +72,7 @@ public class DBLPHandler extends DefaultHandler {
         }
 
         switch (qName) {
-            case BIB -> root = new Node("bib", null);
+            case BIB, DBLP -> root = new Node("bib", null);
             case EE -> {
                 valueBuilder = new StringBuilder();
                 var type = attributes.getValue("type");
@@ -91,8 +94,12 @@ public class DBLPHandler extends DefaultHandler {
             return;
         }
 
+        if (skipPublication) {
+            return;
+        }
+
         switch (qName) {
-            case BIB -> {
+            case BIB, DBLP -> {
             }
             case EE -> {
                 var node = new Node(EE, currentNode);
