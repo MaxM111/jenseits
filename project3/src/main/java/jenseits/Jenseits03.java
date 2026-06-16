@@ -64,6 +64,8 @@ public class Jenseits03 implements AutoCloseable {
 
             System.out.println("Starting Import as Edge Model");
             root.toEdgeModel(obj.getConn());
+            IO.println("Node tuples: " + obj.countTuples("Node"));
+            IO.println("Edge tuples: " + obj.countTuples("Edge"));
 
             obj.importAccel(tree);
         }
@@ -105,6 +107,12 @@ public class Jenseits03 implements AutoCloseable {
             }
         }
         return counts;
+    }
+
+    public long countTuples(String tableName) throws SQLException {
+        var results = conn.createStatement().executeQuery("SELECT COUNT(*) AS count FROM " + tableName);
+        results.next();
+        return results.getLong("count");
     }
 
     /*
