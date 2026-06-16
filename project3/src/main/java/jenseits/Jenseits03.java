@@ -22,8 +22,8 @@ public class Jenseits03 implements AutoCloseable {
         try (var obj = new Jenseits03()) {
             tree.toEdgeModel(obj.getConn());
 
-            var descendants = obj.getDescendants(17); // 17 is ID of "pvldb_2023"
-            pprintNodeRecords("The descendants of pvldb_2023 are", descendants);
+            var descendants = obj.getDescendants(17); // 17 is ID of "vldb_2023"
+            pprintNodeRecords("The descendants of vldb_2023 are", descendants);
 
             var ancestors = obj.getAncestors(2); // Author Daniel Ulrich Schmitt has ID 2
             pprintNodeRecords("The ancestors of Author Daniel Ulrich Schmitt are", ancestors);
@@ -34,10 +34,10 @@ public class Jenseits03 implements AutoCloseable {
             var fsiblings1 = obj.getFollowingSiblings(1); // 1 is ID of "SchmittKAMM23"
             pprintNodeRecords("The f-siblings of SchmittKAMM23 are", fsiblings1);
 
-            var psiblings50 = obj.getPrecedingSiblings(50); // is ID of "SchalerHS23"
+            var psiblings50 = obj.getPrecedingSiblings(49); // is ID of "SchalerHS23"
             pprintNodeRecords("The p-siblings of SchalerHS23 are", psiblings50);
 
-            var fsiblings50 = obj.getFollowingSiblings(50); // is ID of "SchalerHS23"
+            var fsiblings50 = obj.getFollowingSiblings(49); // is ID of "SchalerHS23"
             pprintNodeRecords("The f-siblings of SchalerHS23 are", fsiblings50);
 
         }

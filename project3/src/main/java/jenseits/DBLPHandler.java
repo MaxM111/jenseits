@@ -23,6 +23,7 @@ public class DBLPHandler extends DefaultHandler {
     private final Map<String, Node> venueNodes = new HashMap<>();
     private final Map<String, Node> yearNodes = new HashMap<>();
     private String currentPublication; // used to match the closing tag of a publication
+    private boolean skipPublication = false;
 
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
@@ -39,15 +40,31 @@ public class DBLPHandler extends DefaultHandler {
 
     @Override
     public void startElement(String uri, String lName, String qName, Attributes attributes) throws SAXException {
+        if (skipPublication) {
+            return;
+        }
+
         // if there is a key attribute, we assume it is a publication
         var key = attributes.getValue("key");
         if (key != null) {
+            currentPublication = qName;
+
+            String venue;
+            if (key.startsWith("journals/pvldb/") || key.startsWith("conf/vldb/")) {
+                venue = "vldb";
+            } else if (key.startsWith("journals/pacmmod/") || key.startsWith("conf/sigmod/")) {
+                venue = "sigmod";
+            } else if (key.startsWith("conf/icde/")) {
+                venue = "icde";
+            } else {
+                skipPublication = true;
+                return;
+            }
+
             currentNode = new Node(qName, root);
-            var keyParts = key.split("/");
-            currentVenue = keyParts[1];
+            currentVenue = venue;
             currentNode.addAttribute("key", key);
             currentYear = null;
-            currentPublication = qName;
             return;
         }
 
@@ -65,8 +82,12 @@ public class DBLPHandler extends DefaultHandler {
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
         if (qName.equals(currentPublication)) {
-            appendCurrentPublication();
             currentPublication = null;
+            if (skipPublication) {
+                skipPublication = false;
+            } else {
+                appendCurrentPublication();
+            }
             return;
         }
 
