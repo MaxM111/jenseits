@@ -4,6 +4,7 @@ import java.io.FileWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,6 +53,8 @@ public class Jenseits03 implements AutoCloseable {
             parser2.parse("dblp.xml", handler2);
 
             var root = handler2.getTree();
+            var augstenCounts = obj.countAugstenPublications(root);
+            IO.println("Nikolaus Augsten publications per venue: " + augstenCounts);
 
             IO.println("Writing the XML");
             var mySmallBibXml = root.toString();
@@ -81,6 +84,27 @@ public class Jenseits03 implements AutoCloseable {
     @Override
     public void close() throws Exception {
         conn.close();
+    }
+
+    public HashMap<String, Integer> countAugstenPublications(Node root) {
+        HashMap<String, Integer> counts = new HashMap<>();
+        List<Node> venues = root.getChildren();
+        for (var venue : venues) {
+            String name = venue.attributes.get("name");
+            counts.put(name, 0);
+            List<Node> years = venue.getChildren();
+            for (var year : years) {
+                List<Node> publications = year.getChildren();
+                for (var publication : publications) {
+                    boolean hasAugsten = publication.getChildren().stream().anyMatch(
+                            property -> "author".equals(property.tag) && "Nikolaus Augsten".equals(property.content));
+                    if (hasAugsten) {
+                        counts.put(name, counts.get(name) + 1);
+                    }
+                }
+            }
+        }
+        return counts;
     }
 
     /*

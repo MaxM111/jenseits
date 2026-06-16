@@ -16,11 +16,11 @@ public class Node {
     private static long idCounter = 0;
 
     private long id;
-    private String tag;
-    private NavigableMap<String, String> attributes;
+    public String tag;
+    public NavigableMap<String, String> attributes;
     private Node parent;
     private List<Node> children;
-    private String content; // can be null
+    public String content; // can be null
     private long preorder;
     private long postorder;
 
