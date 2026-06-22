@@ -85,6 +85,12 @@ public class Jenseits03 implements AutoCloseable {
             IO.println("Node tuples: " + obj.countTuples("Node"));
             IO.println("Edge tuples: " + obj.countTuples("Edge"));
 
+            // Phase 3 Bullet Point 2
+            System.out.println("Import Accel with One Axis Annotation");
+            obj.importAccelOneAxis(tree);
+            var xpathDescendantOneAxis = obj.xpathDescendantOneAxis(17);
+            pprintNodeRecords("XPath Axis Descendant One Axis", xpathDescendantOneAxis);
+
         }
 
     }
@@ -481,6 +487,38 @@ public class Jenseits03 implements AutoCloseable {
                 AND post < postorder(%d)
                 AND post >= preorder(%d) - %d
                     """, id, id, treeHeight, id, id, treeHeight));
+        List<NodeRecord> ids = new ArrayList<>();
+        while (results.next()) {
+            var node = new NodeRecord(results.getLong("id"), "", "", "");
+            ids.add(node);
+        }
+        return ids;
+    }
+
+    private static long annotateOneAxis(Node node, long counter) {
+        node.setPreorder(counter++);
+        for (var child : node.getChildren()) {
+            counter = annotateOneAxis(child, counter);
+        }
+        node.setPostorder(counter++);
+        return counter;
+    }
+
+    public void importAccelOneAxis(Node root) throws SQLException {
+        annotateOneAxis(root, 0);
+        createAccelTable();
+        root.toAccel(conn);
+        createHelperFunctions();
+        conn.commit();
+    }
+
+    private List<NodeRecord> xpathDescendantOneAxis(long id) throws SQLException {
+        var results = conn.createStatement().executeQuery(String.format("""
+                SELECT id
+                FROM accel
+                WHERE pre > preorder(%d)
+                AND pre < postorder(%d)
+                    """, id, id));
         List<NodeRecord> ids = new ArrayList<>();
         while (results.next()) {
             var node = new NodeRecord(results.getLong("id"), "", "", "");
