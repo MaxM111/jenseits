@@ -39,6 +39,14 @@ public class Jenseits03 implements AutoCloseable {
             var xpathDescendantReduced = obj.xpathDescendantReduced(17, treeHeight);
             pprintNodeRecords("XPath Axis Descendant Reduced", xpathDescendantReduced);
 
+            // Phase 3 Bullet Point 2
+            System.out.println("Import Accel with One Axis Annotation");
+            obj.importAccelOneAxis(tree);
+            var xpathDescendantOneAxis = obj.xpathDescendantOneAxis(17);
+            pprintNodeRecords("XPath Axis Descendant One Axis", xpathDescendantOneAxis);
+            System.out.println("Restore Accel with Regular Annotation");
+            obj.importAccel(tree);
+
             var ancestors = obj.getAncestors(2); // Author Daniel Ulrich Schmitt has ID 2
             pprintNodeRecords("The ancestors of Author Daniel Ulrich Schmitt are", ancestors);
             var xpathAncestor = obj.xpath(2, XPathAxis.Ancestor);
@@ -84,12 +92,6 @@ public class Jenseits03 implements AutoCloseable {
             root.toEdgeModel(obj.getConn());
             IO.println("Node tuples: " + obj.countTuples("Node"));
             IO.println("Edge tuples: " + obj.countTuples("Edge"));
-
-            // Phase 3 Bullet Point 2
-            System.out.println("Import Accel with One Axis Annotation");
-            obj.importAccelOneAxis(tree);
-            var xpathDescendantOneAxis = obj.xpathDescendantOneAxis(17);
-            pprintNodeRecords("XPath Axis Descendant One Axis", xpathDescendantOneAxis);
 
         }
 
