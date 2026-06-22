@@ -29,11 +29,15 @@ public class Jenseits03 implements AutoCloseable {
         try (var obj = new Jenseits03()) {
             tree.toEdgeModel(obj.getConn());
             obj.importAccel(tree);
+            int treeHeight = height(tree);
+            IO.println("Tree height: " + treeHeight);
 
             var descendants = obj.getDescendants(17); // 17 is ID of "vldb_2023"
             pprintNodeRecords("The descendants of vldb_2023 are", descendants);
             var xpathDescendant = obj.xpath(17, XPathAxis.Descendant);
             pprintNodeRecords("XPath Axis Descendant", xpathDescendant);
+            var xpathDescendantReduced = obj.xpathDescendantReduced(17, treeHeight);
+            pprintNodeRecords("XPath Axis Descendant Reduced", xpathDescendantReduced);
 
             var ancestors = obj.getAncestors(2); // Author Daniel Ulrich Schmitt has ID 2
             pprintNodeRecords("The ancestors of Author Daniel Ulrich Schmitt are", ancestors);
@@ -80,8 +84,6 @@ public class Jenseits03 implements AutoCloseable {
             root.toEdgeModel(obj.getConn());
             IO.println("Node tuples: " + obj.countTuples("Node"));
             IO.println("Edge tuples: " + obj.countTuples("Edge"));
-
-            // Phase 3
 
         }
 
@@ -464,9 +466,26 @@ public class Jenseits03 implements AutoCloseable {
 
     public static int height(Node root) {
         int maxHeight = 0;
-        for (var chld : root.getChildren()) {
+        for (var child : root.getChildren()) {
             maxHeight = Math.max(maxHeight, height(child) + 1);
         }
         return maxHeight;
+    }
+
+    private List<NodeRecord> xpathDescendantReduced(long id, Integer treeHeight) throws SQLException {
+        var results = conn.createStatement().executeQuery(String.format("""
+                SELECT id
+                FROM accel
+                WHERE pre > preorder(%d)
+                AND pre <= postorder(%d) + %d
+                AND post < postorder(%d)
+                AND post >= preorder(%d) - %d
+                    """, id, id, treeHeight, id, id, treeHeight));
+        List<NodeRecord> ids = new ArrayList<>();
+        while (results.next()) {
+            var node = new NodeRecord(results.getLong("id"), "", "", "");
+            ids.add(node);
+        }
+        return ids;
     }
 }
