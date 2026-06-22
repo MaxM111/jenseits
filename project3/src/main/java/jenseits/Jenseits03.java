@@ -3,6 +3,7 @@ package jenseits;
 import java.io.FileWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -79,6 +80,8 @@ public class Jenseits03 implements AutoCloseable {
             root.toEdgeModel(obj.getConn());
             IO.println("Node tuples: " + obj.countTuples("Node"));
             IO.println("Edge tuples: " + obj.countTuples("Edge"));
+
+            // Phase 3
 
         }
 
@@ -457,5 +460,13 @@ public class Jenseits03 implements AutoCloseable {
         Descendant,
         FollowingSibling,
         PrecedingSibling,
+    }
+
+    public static int height(Node root) {
+        int maxHeight = 0;
+        for (var chld : root.getChildren()) {
+            maxHeight = Math.max(maxHeight, height(child) + 1);
+        }
+        return maxHeight;
     }
 }
