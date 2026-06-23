@@ -1,6 +1,7 @@
 package jenseits;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.xml.sax.Attributes;
@@ -27,6 +28,33 @@ public class DBLPHandler extends DefaultHandler {
     private final Map<String, Node> yearNodes = new HashMap<>();
     private String currentPublication; // used to match the closing tag of a publication
     private boolean skipPublication = false;
+    private final List<VenueRule> venueRules;
+
+    public record VenueRule(String venue, String... prefixes) {
+        boolean matches(String key) {
+            for (var prefix : prefixes) {
+                if (key.startsWith(prefix)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    public DBLPHandler() {
+        this(defaultVenueRules());
+    }
+
+    public DBLPHandler(List<VenueRule> venueRules) {
+        this.venueRules = venueRules;
+    }
+
+    public static List<VenueRule> defaultVenueRules() {
+        return List.of(
+                new VenueRule("vldb", "journals/pvldb/", "conf/vldb/"),
+                new VenueRule("sigmod", "journals/pacmmod/", "conf/sigmod/"),
+                new VenueRule("icde", "conf/icde/"));
+    }
 
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
@@ -52,14 +80,8 @@ public class DBLPHandler extends DefaultHandler {
         if (key != null) {
             currentPublication = qName;
 
-            String venue;
-            if (key.startsWith("journals/pvldb/") || key.startsWith("conf/vldb/")) {
-                venue = "vldb";
-            } else if (key.startsWith("journals/pacmmod/") || key.startsWith("conf/sigmod/")) {
-                venue = "sigmod";
-            } else if (key.startsWith("conf/icde/")) {
-                venue = "icde";
-            } else {
+            String venue = venueForKey(key);
+            if (venue == null) {
                 skipPublication = true;
                 return;
             }
@@ -80,6 +102,15 @@ public class DBLPHandler extends DefaultHandler {
             }
             default -> valueBuilder = new StringBuilder();
         }
+    }
+
+    private String venueForKey(String key) {
+        for (var rule : venueRules) {
+            if (rule.matches(key)) {
+                return rule.venue();
+            }
+        }
+        return null;
     }
 
     @Override

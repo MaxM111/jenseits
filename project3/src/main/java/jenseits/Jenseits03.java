@@ -484,7 +484,7 @@ public class Jenseits03 implements AutoCloseable {
         return ids;
     }
 
-    private enum XPathAxis {
+    public enum XPathAxis {
         Ancestor,
         Descendant,
         FollowingSibling,
@@ -588,7 +588,7 @@ public class Jenseits03 implements AutoCloseable {
         conn.commit();
     }
 
-    private List<NodeRecord> xpathDescendantOneAxis(long id) throws SQLException {
+    public List<NodeRecord> xpathDescendantOneAxis(long id) throws SQLException {
         var results = conn.createStatement().executeQuery(String.format("""
                 SELECT id
                 FROM accel
