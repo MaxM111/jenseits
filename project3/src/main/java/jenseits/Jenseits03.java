@@ -533,6 +533,8 @@ public class Jenseits03 implements AutoCloseable {
         return ids;
     }
 
+    // It holds: post(s) >= pre(p) - height(t).
+    // where s (sibling) is child of parent p and height(t) is height of tree t.
     private List<NodeRecord> xpathPSiblingReduced(long id, Integer treeHeight) throws SQLException {
         var results = conn.createStatement().executeQuery(String.format("""
                 SELECT s.id
@@ -552,6 +554,8 @@ public class Jenseits03 implements AutoCloseable {
         return ids;
     }
 
+    // It holds: pre(s) <= post(p) + height(t)
+    // where s (sibling) is child of parent p and height(t) is height of tree t.
     private List<NodeRecord> xpathFSiblingReduced(long id, Integer treeHeight) throws SQLException {
         var results = conn.createStatement().executeQuery(String.format("""
                 SELECT s.id
