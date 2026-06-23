@@ -143,6 +143,16 @@ public class Jenseits03Benchmark {
         rules.add(new VenueRule("ssdbm", "conf/ssdbm/"));
         rules.add(new VenueRule("icdm", "conf/icdm/"));
         rules.add(new VenueRule("caise", "conf/caise/"));
+        rules.add(new VenueRule("sigir", "conf/sigir/"));
+        rules.add(new VenueRule("tkde", "journals/tkde/"));
+        rules.add(new VenueRule("dke", "journals/dke/"));
+        rules.add(new VenueRule("cacm", "journals/cacm/"));
+        rules.add(new VenueRule("jcss", "journals/jcss/"));
+        rules.add(new VenueRule("icdt", "conf/icdt/"));
+        rules.add(new VenueRule("stoc", "conf/stoc/"));
+        rules.add(new VenueRule("soda", "conf/soda/"));
+        rules.add(new VenueRule("aaai", "conf/aaai/"));
+        rules.add(new VenueRule("ijcai", "conf/ijcai/"));
         return rules;
     }
 
