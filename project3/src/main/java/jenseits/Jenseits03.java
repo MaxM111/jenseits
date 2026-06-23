@@ -51,26 +51,36 @@ public class Jenseits03 implements AutoCloseable {
             pprintNodeRecords("The ancestors of Author Daniel Ulrich Schmitt are", ancestors);
             var xpathAncestor = obj.xpath(2, XPathAxis.Ancestor);
             pprintNodeRecords("XPath Axis Ancestor", xpathAncestor);
+            var xpathAncestorReduced = obj.xpathReduced(2, XPathAxis.Ancestor, treeHeight);
+            pprintNodeRecords("XPath Axis Ancestor Reduced", xpathAncestorReduced);
 
             var psiblings1 = obj.getPrecedingSiblings(1); // 1 is ID of "SchmittKAMM23"
             pprintNodeRecords("The p-siblings of SchmittKAMM23 are", psiblings1);
             var xpathPSibling1 = obj.xpath(1, XPathAxis.PrecedingSibling);
             pprintNodeRecords("XPath Axis p-siblings of SchmittKAMM23", xpathPSibling1);
+            var xpathPSibling1Reduced = obj.xpathReduced(1, XPathAxis.PrecedingSibling, treeHeight);
+            pprintNodeRecords("XPath Axis p-siblings of SchmittKAMM23 Reduced", xpathPSibling1Reduced);
 
             var fsiblings1 = obj.getFollowingSiblings(1); // 1 is ID of "SchmittKAMM23"
             pprintNodeRecords("The f-siblings of SchmittKAMM23 are", fsiblings1);
             var xpathFSibling1 = obj.xpath(1, XPathAxis.FollowingSibling);
             pprintNodeRecords("XPath Axis f-siblings of SchmittKAMM23", xpathFSibling1);
+            var xpathFSibling1Reduced = obj.xpathReduced(1, XPathAxis.FollowingSibling, treeHeight);
+            pprintNodeRecords("XPath Axis f-siblings of SchmittKAMM23 Reduced", xpathFSibling1Reduced);
 
             var psiblings50 = obj.getPrecedingSiblings(49); // is ID of "SchalerHS23"
             pprintNodeRecords("The p-siblings of SchalerHS23 are", psiblings50);
             var xpathPSibling50 = obj.xpath(49, XPathAxis.PrecedingSibling);
             pprintNodeRecords("XPath Axis p-siblings of SchalerHS23", xpathPSibling50);
+            var xpathPSibling50Reduced = obj.xpathReduced(49, XPathAxis.PrecedingSibling, treeHeight);
+            pprintNodeRecords("XPath Axis p-siblings of SchalerHS23 Reduced", xpathPSibling50Reduced);
 
             var fsiblings50 = obj.getFollowingSiblings(49); // is ID of "SchalerHS23"
             pprintNodeRecords("The f-siblings of SchalerHS23 are", fsiblings50);
             var xpathFSibling50 = obj.xpath(49, XPathAxis.FollowingSibling);
             pprintNodeRecords("XPath Axis f-siblings of SchalerHS23", xpathFSibling50);
+            var xpathFSibling50Reduced = obj.xpathReduced(49, XPathAxis.FollowingSibling, treeHeight);
+            pprintNodeRecords("XPath Axis f-siblings of SchalerHS23 Reduced", xpathFSibling50Reduced);
 
             // Phase 2 Bullet Point 1
 
@@ -356,6 +366,15 @@ public class Jenseits03 implements AutoCloseable {
         };
     }
 
+    public List<NodeRecord> xpathReduced(long id, XPathAxis axis, Integer treeHeight) throws SQLException {
+        return switch (axis) {
+            case Ancestor -> xpathAncestorReduced(id, treeHeight);
+            case Descendant -> xpathDescendantReduced(id, treeHeight);
+            case FollowingSibling -> xpathFSiblingReduced(id, treeHeight);
+            case PrecedingSibling -> xpathPSiblingReduced(id, treeHeight);
+        };
+    }
+
     public void createHelperFunctions() throws SQLException {
         var statement = conn.createStatement();
         statement.execute("DROP FUNCTION IF EXISTS preorder, postorder, parent");
@@ -497,6 +516,61 @@ public class Jenseits03 implements AutoCloseable {
         return ids;
     }
 
+    private List<NodeRecord> xpathAncestorReduced(long id, Integer treeHeight) throws SQLException {
+        var results = conn.createStatement().executeQuery(String.format("""
+                SELECT id
+                FROM accel
+                WHERE pre < preorder(%d)
+                AND pre <= postorder(%d) + %d
+                AND post > postorder(%d)
+                AND post >= preorder(%d) - %d
+                    """, id, id, treeHeight, id, id, treeHeight));
+        List<NodeRecord> ids = new ArrayList<>();
+        while (results.next()) {
+            var node = new NodeRecord(results.getLong("id"), "", "", "");
+            ids.add(node);
+        }
+        return ids;
+    }
+
+    private List<NodeRecord> xpathPSiblingReduced(long id, Integer treeHeight) throws SQLException {
+        var results = conn.createStatement().executeQuery(String.format("""
+                SELECT s.id
+                FROM accel AS s
+                JOIN accel AS p ON p.id = parent(%d)
+                WHERE s.parent = parent(%d)
+                AND s.pre > p.pre
+                AND s.pre < preorder(%d)
+                AND s.post < postorder(%d)
+                AND s.post >= p.pre - %d
+                    """, id, id, id, id, treeHeight));
+        List<NodeRecord> ids = new ArrayList<>();
+        while (results.next()) {
+            var node = new NodeRecord(results.getLong("id"), "", "", "");
+            ids.add(node);
+        }
+        return ids;
+    }
+
+    private List<NodeRecord> xpathFSiblingReduced(long id, Integer treeHeight) throws SQLException {
+        var results = conn.createStatement().executeQuery(String.format("""
+                SELECT s.id
+                FROM accel AS s
+                JOIN accel AS p ON p.id = parent(%d)
+                WHERE s.parent = parent(%d)
+                AND s.pre > preorder(%d)
+                AND s.pre <= p.post + %d
+                AND s.post > postorder(%d)
+                AND s.post < p.post
+                    """, id, id, id, treeHeight, id));
+        List<NodeRecord> ids = new ArrayList<>();
+        while (results.next()) {
+            var node = new NodeRecord(results.getLong("id"), "", "", "");
+            ids.add(node);
+        }
+        return ids;
+    }
+
     private static long annotateOneAxis(Node node, long counter) {
         node.setPreorder(counter++);
         for (var child : node.getChildren()) {
@@ -528,4 +602,5 @@ public class Jenseits03 implements AutoCloseable {
         }
         return ids;
     }
+
 }
