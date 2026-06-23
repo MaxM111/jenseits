@@ -13,6 +13,18 @@ dependency-reduced-pom.xml
 ### Generated plots ###
 plots/
 
+### Generated LaTeX files ###
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz
+
+### Large local DBLP source dump ###
+dblp.xml
+
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml
