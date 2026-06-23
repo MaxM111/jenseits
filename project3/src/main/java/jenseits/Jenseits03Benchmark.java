@@ -200,23 +200,11 @@ public class Jenseits03Benchmark {
         statement.execute("CREATE INDEX IF NOT EXISTS accel_id_idx ON accel(id)");
         statement.execute("CREATE INDEX IF NOT EXISTS accel_parent_idx ON accel(parent)");
         statement.execute("CREATE INDEX IF NOT EXISTS accel_pre_post_idx ON accel(pre, post)");
-        tryCreateGistIndex(project, statement);
+        statement.execute("""
+                CREATE INDEX IF NOT EXISTS accel_point_gist_idx
+                ON accel USING gist (point(pre::double precision, post::double precision))
+                """);
         project.getConn().commit();
-    }
-
-    private static void tryCreateGistIndex(Jenseits03 project, java.sql.Statement statement)
-            throws Exception {
-        var savepoint = project.getConn().setSavepoint();
-        try {
-            statement.execute("""
-                    CREATE INDEX IF NOT EXISTS accel_point_gist_idx
-                    ON accel USING gist (point(pre::double precision, post::double precision))
-                    """);
-            project.getConn().releaseSavepoint(savepoint);
-        } catch (Exception exception) {
-            project.getConn().rollback(savepoint);
-            System.out.println("Skipping GiST point index: " + exception.getMessage());
-        }
     }
 
     private static void createOneAxisIndexes(Jenseits03 project) throws Exception {
