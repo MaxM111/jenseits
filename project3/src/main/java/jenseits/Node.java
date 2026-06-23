@@ -131,7 +131,7 @@ public class Node {
         var statement = conn.createStatement();
         statement.execute("DROP TABLE IF EXISTS Node, Edge");
         statement.execute(
-                "CREATE TABLE Node (id BIGINT NOT NULL, s_id VARCHAR(100), type VARCHAR(50) NOT NULL, content VARCHAR(512))");
+                "CREATE TABLE Node (id BIGINT NOT NULL, s_id VARCHAR(100), type VARCHAR(50) NOT NULL, content VARCHAR(1024))");
         statement.execute("CREATE TABLE Edge (from_ BIGINT NOT NULL, to_ BIGINT NOT NULL)");
         statement.close();
         var nodeInserter = conn.prepareStatement("INSERT INTO Node VALUES (?, ?, ?, ?)");

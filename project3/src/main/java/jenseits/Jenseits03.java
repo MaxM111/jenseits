@@ -312,8 +312,8 @@ public class Jenseits03 implements AutoCloseable {
                     parent BIGINT
                 )
                 """);
-        statement.execute("CREATE TABLE content (id BIGINT, text VARCHAR(512))");
-        statement.execute("CREATE TABLE attribute(id BIGINT, text VARCHAR(512))");
+        statement.execute("CREATE TABLE content (id BIGINT, text VARCHAR(1024))");
+        statement.execute("CREATE TABLE attribute(id BIGINT, text VARCHAR(1024))");
         conn.commit();
     }
 
