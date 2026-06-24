@@ -146,3 +146,5 @@ $$dom(R) = \prod_{a \in A} dom(a)$$
   - z.b. was wenn man export Path.fn as fn hinzufügt zu erstem bsp? -> Dann werden Knoten immer an denselben Knoten angehängt und wird zu einem Stern
 - Problem bei Clique: Externes Interface müsste wachsen
 - Motifs ist sehr wichtig
+
+## Ende des prüfungs-relevanten Stoffs
