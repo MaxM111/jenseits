@@ -129,3 +129,20 @@ $$dom(R) = \prod_{a \in A} dom(a)$$
 ## Mustererkennung mit Motifs für Graphen
 
 - Externes Interface := Folie 21 blau markiert
+  - Soweit ich verstehe, das externe interface ist im Grunde genommen: Alle Knoten des vorherigen Rekursionsschritts, die man erreichen kann. (Deswegen ist es wichtig, dass das externe Interface stimmt)
+- Rekursion
+  - Rekursionsverankerung (Basisfall)
+  - Rekursionsschritt (recursive "call")
+- fn steht für first node, ln steht für last node
+- Wir starten mit zwei Knoten fn und ln mit einer Kante dazwischen
+- Rekursionsschritt: Prepende einen node fn mit einem edge vor dem fn von einem Graphen (der "vorige" Graph)
+- d.h. man kann pro Graph nur direkt fn (head) und ln (tail) erreichen
+  - dies ist das externe interface, inkl. die Kante e1 (also Rekursionsverankerung ist das externe interface)
+- Folie 27: Tipp: Überlege zuerst Verankerung (Knoten mit Kanten zu "Dreiecken")
+  - Rekursionsschritt nehme so einen solchen Graphen und appende einen neuen Triangle (über Triangle.v1)
+  - export tut basically eine "Umbenennung", damit v0 von Graph von G.v0 zu v0 umbenennt wird (für externes interface)
+- Folie 31: Externes interface ist root, name passt, also nicht notwendig zu exporten
+- Oft bei Prüfung wird er Motif modifizieren und fragen was passiert.
+  - z.b. was wenn man export Path.fn as fn hinzufügt zu erstem bsp? -> Dann werden Knoten immer an denselben Knoten angehängt und wird zu einem Stern
+- Problem bei Clique: Externes Interface müsste wachsen
+- Motifs ist sehr wichtig
