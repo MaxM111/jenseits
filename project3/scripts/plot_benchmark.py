@@ -24,7 +24,7 @@ LABELS = {
     "xpath_one_axis": "One-axis accelerator",
     "ancestor": "Ancestor",
     "descendant": "Descendant",
-    "FollowingSibling": "Following sibling",
+    "P/F-sibling": "P/F siblings",
 }
 
 
@@ -36,7 +36,6 @@ def read_rows():
             row["node_count"] = int(row["node_count"])
             row["edge_count"] = int(row["edge_count"])
             row["avg_ms"] = float(row["avg_ms"])
-            row["result_size"] = int(row["result_size"])
             rows.append(row)
         return rows
 
@@ -80,7 +79,7 @@ def line_chart(rows, axis, approaches, title, filename, y_log=True):
         values.sort(key=lambda item: item["node_count"])
 
     width, height = 980, 560
-    left, right, top, bottom = 90, 260, 70, 85
+    left, right, top, bottom = 90, 260, 70, 105
     plot_w = width - left - right
     plot_h = height - top - bottom
 
@@ -110,7 +109,7 @@ def line_chart(rows, axis, approaches, title, filename, y_log=True):
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#FFFFFF"/>',
         svg_text(width / 2, 32, title, size=22, weight="700"),
-        svg_text(width / 2, 54, "Average runtime over 5 measured runs", size=13, color="#52606D"),
+        svg_text(width / 2, 54, "Average runtime over 1,000 measured runs", size=13, color="#52606D"),
         f'<rect x="{left}" y="{top}" width="{plot_w}" height="{plot_h}" fill="#FBFCFD" stroke="#D9E2EC"/>',
     ]
 
@@ -118,7 +117,14 @@ def line_chart(rows, axis, approaches, title, filename, y_log=True):
     for value in x_ticks:
         x = x_pos(value)
         parts.append(f'<line x1="{x:.1f}" y1="{top}" x2="{x:.1f}" y2="{top + plot_h}" stroke="#E5EAF0"/>')
-        parts.append(svg_text(x, top + plot_h + 24, f'{value / 1_000_000:.2f}M', size=12))
+        parts.append(svg_text(
+            x - 2,
+            top + plot_h + 24,
+            f'{value / 1_000_000:.2f}M',
+            size=12,
+            anchor="end",
+            rotate=-35,
+        ))
 
     y_ticks = nice_ticks_log(min_y, max_y) if y_log else []
     for value in y_ticks:
@@ -160,11 +166,11 @@ def line_chart(rows, axis, approaches, title, filename, y_log=True):
 
 
 def small_multiples(rows):
-    axes = ["ancestor", "descendant", "FollowingSibling"]
+    axes = ["ancestor", "descendant", "P/F-sibling"]
     approaches = ["edge", "xpath_accel", "xpath_reduced", "xpath_one_axis"]
     width, height = 1120, 760
     margin_x, gap = 78, 34
-    top, bottom = 92, 92
+    top, bottom = 92, 125
     panel_w = (width - 2 * margin_x - 2 * gap) / 3
     panel_h = height - top - bottom
 
@@ -201,7 +207,14 @@ def small_multiples(rows):
             x = x_pos(value)
             parts.append(f'<line x1="{x:.1f}" y1="{top}" x2="{x:.1f}" y2="{top + panel_h}" stroke="#EDF2F7"/>')
             if panel_index == 1:
-                parts.append(svg_text(x, top + panel_h + 24, f'{value / 1_000_000:.2f}M', size=11))
+                parts.append(svg_text(
+                    x - 2,
+                    top + panel_h + 24,
+                    f'{value / 1_000_000:.2f}M',
+                    size=11,
+                    anchor="end",
+                    rotate=-35,
+                ))
 
         for value in ticks:
             y = y_pos(value)
@@ -280,6 +293,24 @@ def dataset_size_chart(rows):
     (OUT_DIR / "benchmark_dataset_sizes.svg").write_text("\n".join(parts), encoding="utf-8")
 
 
+def export_pdfs():
+    try:
+        import cairosvg
+    except ImportError as error:
+        raise SystemExit(
+            "PDF export requires CairoSVG. Install it with: "
+            "python3 -m pip install -r scripts/requirements.txt"
+        ) from error
+
+    for svg_path in sorted(OUT_DIR.glob("benchmark_*.svg")):
+        pdf_path = svg_path.with_suffix(".pdf")
+        cairosvg.svg2pdf(
+            url=str(svg_path),
+            write_to=str(pdf_path),
+        )
+        print(f"Wrote {pdf_path.relative_to(ROOT)}")
+
+
 def main():
     OUT_DIR.mkdir(exist_ok=True)
     rows = read_rows()
@@ -300,13 +331,14 @@ def main():
     )
     line_chart(
         rows,
-        "FollowingSibling",
+        "P/F-sibling",
         ["edge", "xpath_accel", "xpath_reduced"],
-        "Following-Sibling Axis Runtime",
+        "Preceding/Following-Sibling Runtime",
         "benchmark_following_sibling.svg",
     )
     small_multiples(rows)
     dataset_size_chart(rows)
+    export_pdfs()
 
 
 if __name__ == "__main__":
