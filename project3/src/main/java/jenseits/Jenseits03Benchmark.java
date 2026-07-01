@@ -14,7 +14,7 @@ import jenseits.util.Logger;
 
 public class Jenseits03Benchmark {
     private static final Path DEFAULT_SOURCE = Path.of("dblp.xml");
-    private static final int DEFAULT_MEASURED_RUNS = 10;
+    private static final int DEFAULT_MEASURED_RUNS = 100;
     private static final long SIBLING_RANDOM_SEED = 42;
     private static final int[] DEFAULT_SCALE_FACTORS = { 1, 2, 4, 8 };
 
@@ -313,13 +313,6 @@ public class Jenseits03Benchmark {
             String axis,
             long contextId,
             Measurement measurement) throws Exception {
-        System.out.printf(
-                "  %-16s %-18s result=%s, average=%.3f ms (%d runs)%n",
-                approach,
-                axis,
-                measurement.resultSize(),
-                measurement.averageMillis(),
-                DEFAULT_MEASURED_RUNS);
         logger.log(
                 dataset,
                 String.valueOf(venueCount),
