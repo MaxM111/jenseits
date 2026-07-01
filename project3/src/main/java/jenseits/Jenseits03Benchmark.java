@@ -14,7 +14,7 @@ import jenseits.util.Logger;
 
 public class Jenseits03Benchmark {
     private static final Path DEFAULT_SOURCE = Path.of("dblp.xml");
-    private static final int DEFAULT_MEASURED_RUNS = 100;
+    private static final int DEFAULT_MEASURED_RUNS = 1_000;
     private static final long SIBLING_RANDOM_SEED = 42;
     private static final int[] DEFAULT_SCALE_FACTORS = { 1, 2, 4, 8 };
 

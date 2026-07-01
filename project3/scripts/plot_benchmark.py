@@ -109,7 +109,7 @@ def line_chart(rows, axis, approaches, title, filename, y_log=True):
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#FFFFFF"/>',
         svg_text(width / 2, 32, title, size=22, weight="700"),
-        svg_text(width / 2, 54, "Average runtime over 100 measured runs", size=13, color="#52606D"),
+        svg_text(width / 2, 54, "Average runtime over 1,000 measured runs", size=13, color="#52606D"),
         f'<rect x="{left}" y="{top}" width="{plot_w}" height="{plot_h}" fill="#FBFCFD" stroke="#D9E2EC"/>',
     ]
 
