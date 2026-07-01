@@ -10,10 +10,6 @@ dependency-reduced-pom.xml
 ### tsv ###
 *.tsv
 
-### Generated plots ###
-plots/*
-!plots/*.svg
-
 ### Generated LaTeX files ###
 *.aux
 *.bbl
