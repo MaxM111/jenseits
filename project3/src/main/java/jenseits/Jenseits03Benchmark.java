@@ -14,8 +14,8 @@ import jenseits.util.Logger;
 
 public class Jenseits03Benchmark {
     private static final Path DEFAULT_SOURCE = Path.of("dblp.xml");
-    private static final int DEFAULT_WARMUP_RUNS = 1;
-    private static final int DEFAULT_MEASURED_RUNS = 5;
+    private static final int DEFAULT_MEASURED_RUNS = 10;
+    private static final long SIBLING_RANDOM_SEED = 42;
     private static final int[] DEFAULT_SCALE_FACTORS = { 1, 2, 4, 8 };
 
     @FunctionalInterface
@@ -23,10 +23,13 @@ public class Jenseits03Benchmark {
         int run() throws Exception;
     }
 
-    private record BenchmarkContext(long articleId, long yearId, XPathAxis siblingAxis) {
+    private record BenchmarkContext(long articleId, long yearId) {
     }
 
-    private record Measurement(double averageMillis, int resultSize) {
+    private record BenchmarkTarget(String articleKey, String yearSid) {
+    }
+
+    private record Measurement(double averageMillis, String resultSize) {
     }
 
     public static void main(String[] args) throws Exception {
@@ -54,6 +57,7 @@ public class Jenseits03Benchmark {
                     "avg_ms",
                     "runs");
 
+            BenchmarkTarget target = null;
             for (var scaleFactor : DEFAULT_SCALE_FACTORS) {
                 int venueCount = Math.min(venueRules.size(), DBLPHandler.defaultVenueRules().size() * scaleFactor);
                 var activeRules = List.copyOf(venueRules.subList(0, venueCount));
@@ -61,62 +65,80 @@ public class Jenseits03Benchmark {
 
                 System.out.printf("Parsing %s with %d venue rules...%n", source, venueCount);
                 var root = parse(source, activeRules);
-                var context = selectBenchmarkContext(root);
+                if (target == null) {
+                    target = selectBenchmarkTarget(root);
+                    System.out.printf("Fixed benchmark contexts: article=%s, year=%s%n",
+                            target.articleKey(), target.yearSid());
+                }
+                var context = resolveBenchmarkContext(root, target);
+                System.out.printf("Resolved context IDs: article=%d, year=%d%n",
+                        context.articleId(), context.yearId());
 
                 try (var project = new Jenseits03()) {
+                    System.out.println("Importing EDGE model and creating indexes...");
                     root.toEdgeModel(project.getConn());
                     createEdgeIndexes(project);
                     long nodeCount = project.countTuples("Node");
                     long edgeCount = project.countTuples("Edge");
+                    System.out.printf("EDGE model ready: nodes=%d, edges=%d%n", nodeCount, edgeCount);
 
                     logMeasurement(logger, dataset, venueCount, nodeCount, edgeCount, "edge", "ancestor",
-                            context.articleId(), context.siblingAxis(),
+                            context.articleId(),
                             measure(() -> project.getAncestors(context.articleId()).size()));
                     logMeasurement(logger, dataset, venueCount, nodeCount, edgeCount, "edge", "descendant",
-                            context.yearId(), context.siblingAxis(),
+                            context.yearId(),
                             measure(() -> project.getDescendants(context.yearId()).size()));
-                    logMeasurement(logger, dataset, venueCount, nodeCount, edgeCount, "edge",
-                            context.siblingAxis().name(), context.articleId(), context.siblingAxis(),
-                            measure(() -> runEdgeSiblingQuery(project, context)));
+                    logMeasurement(logger, dataset, venueCount, nodeCount, edgeCount, "edge", "P/F-sibling",
+                            context.articleId(), measureSibling(
+                                    () -> project.getPrecedingSiblings(context.articleId()).size(),
+                                    () -> project.getFollowingSiblings(context.articleId()).size()));
 
+                    System.out.println("Importing two-axis XPath accelerator and creating indexes...");
                     project.importAccel(root);
                     createAccelIndexes(project);
                     long accelCount = project.countTuples("accel");
+                    System.out.printf("XPath accelerator ready: tuples=%d%n", accelCount);
 
                     logMeasurement(logger, dataset, venueCount, accelCount, edgeCount, "xpath_accel", "ancestor",
-                            context.articleId(), context.siblingAxis(),
+                            context.articleId(),
                             measure(() -> project.xpath(context.articleId(), XPathAxis.Ancestor).size()));
                     logMeasurement(logger, dataset, venueCount, accelCount, edgeCount, "xpath_accel", "descendant",
-                            context.yearId(), context.siblingAxis(),
+                            context.yearId(),
                             measure(() -> project.xpath(context.yearId(), XPathAxis.Descendant).size()));
-                    logMeasurement(logger, dataset, venueCount, accelCount, edgeCount, "xpath_accel",
-                            context.siblingAxis().name(), context.articleId(), context.siblingAxis(),
-                            measure(() -> project.xpath(context.articleId(), context.siblingAxis()).size()));
+                    logMeasurement(logger, dataset, venueCount, accelCount, edgeCount, "xpath_accel", "P/F-sibling",
+                            context.articleId(), measureSibling(
+                                    () -> project.xpath(context.articleId(), XPathAxis.PrecedingSibling).size(),
+                                    () -> project.xpath(context.articleId(), XPathAxis.FollowingSibling).size()));
 
                     int treeHeight = Jenseits03.height(root);
 
                     logMeasurement(logger, dataset, venueCount, accelCount, edgeCount, "xpath_reduced", "ancestor",
-                            context.articleId(), context.siblingAxis(),
+                            context.articleId(),
                             measure(() -> project.xpathReduced(context.articleId(), XPathAxis.Ancestor, treeHeight)
                                     .size()));
                     logMeasurement(logger, dataset, venueCount, accelCount, edgeCount, "xpath_reduced", "descendant",
-                            context.yearId(), context.siblingAxis(),
+                            context.yearId(),
                             measure(() -> project.xpathReduced(context.yearId(), XPathAxis.Descendant, treeHeight)
                                     .size()));
-                    logMeasurement(logger, dataset, venueCount, accelCount, edgeCount, "xpath_reduced",
-                            context.siblingAxis().name(), context.articleId(), context.siblingAxis(),
-                            measure(() -> project.xpathReduced(context.articleId(), context.siblingAxis(), treeHeight)
-                                    .size()));
+                    logMeasurement(logger, dataset, venueCount, accelCount, edgeCount, "xpath_reduced", "P/F-sibling",
+                            context.articleId(), measureSibling(
+                                    () -> project.xpathReduced(context.articleId(), XPathAxis.PrecedingSibling,
+                                            treeHeight).size(),
+                                    () -> project.xpathReduced(context.articleId(), XPathAxis.FollowingSibling,
+                                            treeHeight).size()));
 
+                    System.out.println("Importing one-axis XPath accelerator and creating indexes...");
                     project.importAccelOneAxis(root);
                     createOneAxisIndexes(project);
                     long oneAxisCount = project.countTuples("accel");
+                    System.out.printf("One-axis accelerator ready: tuples=%d%n", oneAxisCount);
 
                     logMeasurement(logger, dataset, venueCount, oneAxisCount, edgeCount, "xpath_one_axis",
-                            "descendant", context.yearId(), context.siblingAxis(),
+                            "descendant", context.yearId(),
                             measure(() -> project.xpathDescendantOneAxis(context.yearId()).size()));
 
                     logger.flush();
+                    System.out.printf("Completed dataset %s.%n%n", dataset);
                 }
             }
         }
@@ -156,13 +178,9 @@ public class Jenseits03Benchmark {
         return rules;
     }
 
-    private static BenchmarkContext selectBenchmarkContext(Node root) {
+    private static BenchmarkTarget selectBenchmarkTarget(Node root) {
         Node firstYearWithPublications = null;
         Node siblingContext = null;
-        XPathAxis siblingAxis = new Random(42).nextBoolean()
-                ? XPathAxis.FollowingSibling
-                : XPathAxis.PrecedingSibling;
-
         for (var venue : root.getChildren()) {
             for (var year : venue.getChildren()) {
                 var publications = year.getChildren();
@@ -172,12 +190,8 @@ public class Jenseits03Benchmark {
                 if (firstYearWithPublications == null) {
                     firstYearWithPublications = year;
                 }
-                if (siblingAxis == XPathAxis.FollowingSibling && publications.size() > 1) {
-                    siblingContext = publications.get(0);
-                    break;
-                }
-                if (siblingAxis == XPathAxis.PrecedingSibling && publications.size() > 1) {
-                    siblingContext = publications.get(publications.size() - 1);
+                if (publications.size() > 1) {
+                    siblingContext = publications.get(publications.size() / 2);
                     break;
                 }
             }
@@ -193,7 +207,37 @@ public class Jenseits03Benchmark {
             siblingContext = firstYearWithPublications.getChildren().get(0);
         }
 
-        return new BenchmarkContext(siblingContext.getID(), firstYearWithPublications.getID(), siblingAxis);
+        var articleKey = siblingContext.attributes.get("key");
+        if (articleKey == null) {
+            throw new IllegalStateException("Selected benchmark article has no stable key.");
+        }
+        return new BenchmarkTarget(articleKey, firstYearWithPublications.create_s_id());
+    }
+
+    private static BenchmarkContext resolveBenchmarkContext(Node root, BenchmarkTarget target) {
+        Node article = null;
+        Node year = null;
+
+        for (var venue : root.getChildren()) {
+            for (var candidateYear : venue.getChildren()) {
+                if (candidateYear.create_s_id().equals(target.yearSid())) {
+                    year = candidateYear;
+                }
+                for (var publication : candidateYear.getChildren()) {
+                    if (target.articleKey().equals(publication.attributes.get("key"))) {
+                        article = publication;
+                    }
+                }
+            }
+        }
+
+        if (article == null) {
+            throw new IllegalStateException("Fixed benchmark article not found: " + target.articleKey());
+        }
+        if (year == null) {
+            throw new IllegalStateException("Fixed benchmark year not found: " + target.yearSid());
+        }
+        return new BenchmarkContext(article.getID(), year.getID());
     }
 
     private static void createEdgeIndexes(Jenseits03 project) throws Exception {
@@ -225,18 +269,8 @@ public class Jenseits03Benchmark {
         project.getConn().commit();
     }
 
-    private static int runEdgeSiblingQuery(Jenseits03 project, BenchmarkContext context) throws Exception {
-        if (context.siblingAxis() == XPathAxis.FollowingSibling) {
-            return project.getFollowingSiblings(context.articleId()).size();
-        }
-        return project.getPrecedingSiblings(context.articleId()).size();
-    }
-
     private static Measurement measure(TimedQuery query) throws Exception {
-        int resultSize = query.run();
-        for (int i = 0; i < DEFAULT_WARMUP_RUNS; i++) {
-            query.run();
-        }
+        int resultSize = 0;
 
         long start = System.nanoTime();
         for (int i = 0; i < DEFAULT_MEASURED_RUNS; i++) {
@@ -245,7 +279,28 @@ public class Jenseits03Benchmark {
         long end = System.nanoTime();
 
         double averageMillis = (end - start) / 1_000_000.0 / DEFAULT_MEASURED_RUNS;
-        return new Measurement(averageMillis, resultSize);
+        return new Measurement(averageMillis, String.valueOf(resultSize));
+    }
+
+    private static Measurement measureSibling(TimedQuery preceding, TimedQuery following) throws Exception {
+        var random = new Random(SIBLING_RANDOM_SEED);
+        Integer precedingSize = null;
+        Integer followingSize = null;
+
+        long start = System.nanoTime();
+        for (int i = 0; i < DEFAULT_MEASURED_RUNS; i++) {
+            if (random.nextBoolean()) {
+                followingSize = following.run();
+            } else {
+                precedingSize = preceding.run();
+            }
+        }
+        long end = System.nanoTime();
+
+        double averageMillis = (end - start) / 1_000_000.0 / DEFAULT_MEASURED_RUNS;
+        var resultSizes = "preceding=" + (precedingSize == null ? "not-run" : precedingSize)
+                + "/following=" + (followingSize == null ? "not-run" : followingSize);
+        return new Measurement(averageMillis, resultSizes);
     }
 
     private static void logMeasurement(
@@ -257,8 +312,14 @@ public class Jenseits03Benchmark {
             String approach,
             String axis,
             long contextId,
-            XPathAxis siblingAxis,
             Measurement measurement) throws Exception {
+        System.out.printf(
+                "  %-16s %-18s result=%s, average=%.3f ms (%d runs)%n",
+                approach,
+                axis,
+                measurement.resultSize(),
+                measurement.averageMillis(),
+                DEFAULT_MEASURED_RUNS);
         logger.log(
                 dataset,
                 String.valueOf(venueCount),
@@ -267,7 +328,7 @@ public class Jenseits03Benchmark {
                 approach,
                 axis,
                 String.valueOf(contextId),
-                siblingAxis.name(),
+                axis.equals("P/F-sibling") ? "random-per-run" : "n/a",
                 String.valueOf(measurement.resultSize()),
                 String.format("%.3f", measurement.averageMillis()),
                 String.valueOf(DEFAULT_MEASURED_RUNS));

@@ -24,7 +24,7 @@ LABELS = {
     "xpath_one_axis": "One-axis accelerator",
     "ancestor": "Ancestor",
     "descendant": "Descendant",
-    "FollowingSibling": "Following sibling",
+    "P/F-sibling": "P/F siblings",
 }
 
 
@@ -36,7 +36,6 @@ def read_rows():
             row["node_count"] = int(row["node_count"])
             row["edge_count"] = int(row["edge_count"])
             row["avg_ms"] = float(row["avg_ms"])
-            row["result_size"] = int(row["result_size"])
             rows.append(row)
         return rows
 
@@ -110,7 +109,7 @@ def line_chart(rows, axis, approaches, title, filename, y_log=True):
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#FFFFFF"/>',
         svg_text(width / 2, 32, title, size=22, weight="700"),
-        svg_text(width / 2, 54, "Average runtime over 5 measured runs", size=13, color="#52606D"),
+        svg_text(width / 2, 54, "Average runtime over 10 measured runs", size=13, color="#52606D"),
         f'<rect x="{left}" y="{top}" width="{plot_w}" height="{plot_h}" fill="#FBFCFD" stroke="#D9E2EC"/>',
     ]
 
@@ -160,7 +159,7 @@ def line_chart(rows, axis, approaches, title, filename, y_log=True):
 
 
 def small_multiples(rows):
-    axes = ["ancestor", "descendant", "FollowingSibling"]
+    axes = ["ancestor", "descendant", "P/F-sibling"]
     approaches = ["edge", "xpath_accel", "xpath_reduced", "xpath_one_axis"]
     width, height = 1120, 760
     margin_x, gap = 78, 34
@@ -300,9 +299,9 @@ def main():
     )
     line_chart(
         rows,
-        "FollowingSibling",
+        "P/F-sibling",
         ["edge", "xpath_accel", "xpath_reduced"],
-        "Following-Sibling Axis Runtime",
+        "Preceding/Following-Sibling Runtime",
         "benchmark_following_sibling.svg",
     )
     small_multiples(rows)
