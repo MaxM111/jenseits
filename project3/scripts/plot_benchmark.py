@@ -279,6 +279,24 @@ def dataset_size_chart(rows):
     (OUT_DIR / "benchmark_dataset_sizes.svg").write_text("\n".join(parts), encoding="utf-8")
 
 
+def export_pdfs():
+    try:
+        import cairosvg
+    except ImportError as error:
+        raise SystemExit(
+            "PDF export requires CairoSVG. Install it with: "
+            "python3 -m pip install -r scripts/requirements.txt"
+        ) from error
+
+    for svg_path in sorted(OUT_DIR.glob("benchmark_*.svg")):
+        pdf_path = svg_path.with_suffix(".pdf")
+        cairosvg.svg2pdf(
+            url=str(svg_path),
+            write_to=str(pdf_path),
+        )
+        print(f"Wrote {pdf_path.relative_to(ROOT)}")
+
+
 def main():
     OUT_DIR.mkdir(exist_ok=True)
     rows = read_rows()
@@ -306,6 +324,7 @@ def main():
     )
     small_multiples(rows)
     dataset_size_chart(rows)
+    export_pdfs()
 
 
 if __name__ == "__main__":
