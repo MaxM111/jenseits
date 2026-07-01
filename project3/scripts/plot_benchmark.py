@@ -79,7 +79,7 @@ def line_chart(rows, axis, approaches, title, filename, y_log=True):
         values.sort(key=lambda item: item["node_count"])
 
     width, height = 980, 560
-    left, right, top, bottom = 90, 260, 70, 85
+    left, right, top, bottom = 90, 260, 70, 105
     plot_w = width - left - right
     plot_h = height - top - bottom
 
@@ -117,7 +117,14 @@ def line_chart(rows, axis, approaches, title, filename, y_log=True):
     for value in x_ticks:
         x = x_pos(value)
         parts.append(f'<line x1="{x:.1f}" y1="{top}" x2="{x:.1f}" y2="{top + plot_h}" stroke="#E5EAF0"/>')
-        parts.append(svg_text(x, top + plot_h + 24, f'{value / 1_000_000:.2f}M', size=12))
+        parts.append(svg_text(
+            x - 2,
+            top + plot_h + 24,
+            f'{value / 1_000_000:.2f}M',
+            size=12,
+            anchor="end",
+            rotate=-35,
+        ))
 
     y_ticks = nice_ticks_log(min_y, max_y) if y_log else []
     for value in y_ticks:
@@ -163,7 +170,7 @@ def small_multiples(rows):
     approaches = ["edge", "xpath_accel", "xpath_reduced", "xpath_one_axis"]
     width, height = 1120, 760
     margin_x, gap = 78, 34
-    top, bottom = 92, 92
+    top, bottom = 92, 125
     panel_w = (width - 2 * margin_x - 2 * gap) / 3
     panel_h = height - top - bottom
 
@@ -200,7 +207,14 @@ def small_multiples(rows):
             x = x_pos(value)
             parts.append(f'<line x1="{x:.1f}" y1="{top}" x2="{x:.1f}" y2="{top + panel_h}" stroke="#EDF2F7"/>')
             if panel_index == 1:
-                parts.append(svg_text(x, top + panel_h + 24, f'{value / 1_000_000:.2f}M', size=11))
+                parts.append(svg_text(
+                    x - 2,
+                    top + panel_h + 24,
+                    f'{value / 1_000_000:.2f}M',
+                    size=11,
+                    anchor="end",
+                    rotate=-35,
+                ))
 
         for value in ticks:
             y = y_pos(value)
