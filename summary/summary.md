@@ -101,3 +101,78 @@ Also eigentlich was v2h macht (glaube ich).
   $$= \pi_{oid}(\sigma_{key='a_1' \land val \theta 'a1'(V)}) \cap \pi_{oid}(\sigma_{key='a_2' \land val \theta 'a2'(V)})$$
 
 Also einfach nach den Rows mit dem gesuchten Attribut **und** Attributwert filtern. Bei mehreren Bedingungen mit $\land$ verknüpft, selektiere für die Bedingungen einzeln und nehme Mengenschnitt.
+
+## Logik-basierte Anfragesprachen
+
+- Logik als Anfragesprache (also mittels Mathematik)
+
+### Tupelkalkül
+
+Allgemeine Form:
+$$\{t.oid \mid \varphi(t)\}$$
+Also die Menge an Tupel $t$, die die Formel $\varphi$ erfüllen. Mit Punkt-notation (alternativ auch indexieren) greift man auf die Attribute zu.
+
+Bsp.:
+$$\{t \mid KUNDE(t) \land \exists s (AUFTRAG(s) \land s.kdnr = t.kdnr)\}$$
+
+### Bereichskalkül
+
+Allgemeine Form:
+$$\{x_1, \dots, x_n \mid \varphi(x_1, \dots, x_n)\}$$
+Es müssen nicht alle Variablen belegt werden, man kann stattessen "\_" schreiben.
+
+Bsp.:
+
+Alle Orte, in denen es Kunden gibt (z.b. bei Schema KUNDE(oid, vorname, nachname, ort)):
+$$\{x \mid KUNDE(\_, \_, \_, x)\}$$
+
+Alle Kunden aus Salzburg:
+$$\{x, y, z \mid KUNDE(x, y, z, "Salzburg")\}$$
+
+Waren ohne Bestellung (Join auf $x$):
+$$\{x, y \mid WARE(x, y, \_) \land \neg AUFTRAG(\_,\_,x,\_)\}$$
+
+### Sichere Anfragen
+
+Eine Anfrage ist sicher, wenn für jeden Datenbankzustand, ein endliches Ergebnis geliefert wird.
+Zum Beispiel ist folgende Anfrage nicht sicher:
+$$\{k \mid \neg KUNDE(k)\}$$
+Domäne ist unendlich groß, $KUNDE(k)$ ist nicht unendlich groß, somit ist $\neg KUNDE(k)$ unendlich groß und somit liefert diese Anfrage ein unendlich großes Ergebnis.
+
+### Datalog
+
+- basiert auf Kalkülen
+- Eigenschaften wie formale Nachweisbarkeit
+- Teilmenge von Prolog
+- Man kann transitive Hülle berechnen (geht nicht in Relationale Algebra (nur für Maximallänge $k$))
+
+#### Basics
+
+- Anhand Bsp:
+- Relation `Person(X, Y, Z)` (Attribute: Name, Alter, Geschlecht)
+- Relation `Elternschaft(X, Y)` (Attribute: Elternteil, Kind)
+- Mögliches Tupel: `Person(Klemens, 32, m)`, `Elternschaft(John, Jeff)`
+- Anfrage: `Elternschaft(John, x)` ("Kinder von John")
+
+- **Extensionale Datenbank**
+  - Basis-Daten der Datenbank (Person, Elternschaft)
+- **Intensionale Datenbank**
+  - Abgeleitete Relationen, "Views"
+    - z.B.: `Vater(X, Y) :- Person(X, \_, m), Elternschaft(X, Y)`
+
+##### Definition von Datalog Programm
+
+- Atom: $P(X_1, \dots, X_n)$
+- Literal: `[ not ] Atom`
+- Klausel: Disjunktion von Literalen
+- Horn-Klauseln: Klausel mit maximal ein positiven Literal
+  - $\neg p_1 \cup \neg p_2 \cup \neg p_3 \cup u$
+- Datalog: Menge von Horn-Klauseln
+
+##### Probleme bei Logischer Anfragesprache
+
+- Erfüllbarkeit (SAT) von Aussagenlogik ist NP-vollständig
+- FOL ist nicht entscheidbar
+- $\Rightarrow$ Beschränkung auf **Horn-Klauseln**
+
+##### Rekursion in Datalog
