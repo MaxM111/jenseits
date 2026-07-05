@@ -580,6 +580,30 @@ WITH RECURSIVE Reaches(from_, to_) AS (
 
 ## Deklarativer Zugriff auf semistrukturierte Daten
 
+- Relationale Algebra ist abgeschlossen (Input: Relation, Output: Relation)
+  - $\Rightarrow$ Bei XML muss Baum zurückgeben, da Input Baum ist (z.b. Wurzel "result" mit Kindern als Ergebnis)
+
+### XPath
+
+- (Syntax muss nicht gemerkt werden, nur zur Merkhilfe)
+- Absoluter vs relativer Pfad spezifizierbar (`name` vs `.name`)
+- Globale Suche im Dokument (`//name`)
+- Auf Kinder eines Elements zugreifen (`name/*`)
+- Auf Attribute eines Elements zugreifen (`name@*`)
+- Selektion (`name[a1 or a2 = "Hans"]`, `book[.//firstname]`)
+  - Somit auch Joins möglich
+- Namespaces
+
+#### Location Paths
+
+- Besteht aus _Location Steps_
+- **Location Step**:
+  - **Achse**
+  - **Node Test**
+  - **Predicates**
+- z.B.: `/descendant::figure[1]` - selektiere erstes Bild im Dokument
+- z.B.: `//author/parent::book` - selektiere Autoren, dessen Parent ein `book` ist
+
 ## Matrix Multiplikation
 
 - schau Video
