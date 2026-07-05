@@ -380,20 +380,6 @@ WITH RECURSIVE Reaches(from_, to_) AS (
 
 - Man muss also nach **Workload** entscheiden:
 
-#### Workloads
-
-##### Transaktionaler Workload (OLTP)
-
-- Typisch: Wenige Tupel werden vollständig geholt
-- Mischung von Read/Write
-- Optimierung: Throughput
-- Wenn wenig Write, kann Column-Store sinnvoll sein
-
-##### Analytischer Workload
-
-- Typisch: Für wenige Attribute holt man viele Tupel
-- Große Datenmenge, aber generell nur gelesen
-
 ### Verarbeitungsmodell
 
 - Definiert:
@@ -418,4 +404,102 @@ WITH RECURSIVE Reaches(from_, to_) AS (
 
 - Ausführung von gesamten Input auf Operator
 - Operator ist auf **Spalten** definiert (nicht Tupel oder Relation)
-  - Selektion: s
+  - Selektion: Spalte $\mapsto$ `[TID]` (alle TIDs, die "überleben")
+  - Join: Spalte $\times$ Spalte $\mapsto$ `[(TID, TID)]` (alle TIDs, die einen Joinpartner finden)
+  - Materialisierung: `[TID]` $\mapsto$ Spalte (Erhalte Spaltenwert für TID)
+- Operator pro Spalte nur einmal aufgerufen und looped über ganze Spalte
+- Zwischenergebnis vollständig im RAM
+
+- Code passt in Instruction-cache
+- Compiler kann leichter optimieren (loop-unrolling (doesn't sound good imo), vektorisierung)
+- Vorteile:
+  - Code/Data-Cache-friendly
+  - leicht optimierbarer Code
+- Nachteile:
+  - Daten passen nicht vollständig in Cache $\rightarrow$ Memory-access
+  - Man braucht genug RAM für Zwischenergebnisse
+
+#### Vektorisierte Ausführung
+
+- Arbeitet auf Spalten
+- Volcano-Iteration: `next()` liefert kein Tupel, sondern Vektor
+- Vektor muss klein genug sein für cache, aber groß genug für wenig function-call overhead
+
+#### Data-Centric Code Generation
+
+- Generiere Implementierung von Operatoren zu Laufzeit
+- Anfrageplan traversiert mit DFS:
+  - First visit: Spezfischer Code wird generiert und kompiliert (`produce()`)
+  - Last-visit: Ausführung vom generiertem Code (`consume`)
+- Entweder:
+  - Ein loop mit Prädikaten ($\rightarrow$ keine Zwischenergebnisse)
+  - Mehrere loops pro Prädikat, die als Zwischenergebnis Indexe weitergeben (cache-friendly, weil pro Attribut abgearbeitet)
+
+### Workloads
+
+#### Transaktionaler Workload (OLTP)
+
+- Typisch: Wenige Tupel werden vollständig geholt
+- Mischung von Read/Write
+- Optimierung: Throughput
+- Wenn wenig Write, kann Column-Store sinnvoll sein
+
+#### Analytischer Workload (OLAP)
+
+- Typisch: Für wenige Attribute holt man viele Tupel
+- Große Datenmenge, aber generell nur gelesen
+- Column-Store macht hier Sinn
+- Verarbeitungsmodell meist Vector-at-a-time oder Code-Compilation
+- Transaktionen?
+  - (naiv) werden weggelassen, sperre einfach Datenbank bei Updates
+  - **Delta Store**
+
+##### Delta Store
+
+- **Main-Store**
+  - Column-Store
+  - read-only (optimiert dafür)
+  - für Write wird gesperrt
+- **Delta-Store**
+  - Row-Store
+  - Sammelt `UPDATE`, `DELETE`, `INSERT`
+  - Wenn voll, Synchronisation mit Main-Store mittels exclusive lock
+
+- Read ist dann Ergebnis von Main-Store und Delta-Store gemerged
+
+### Kompression
+
+- Ziel: Cache-friendlier durch Size-Reduktion
+- Anforderungen für Verfahren:
+  - Lossless
+  - Lightweight
+  - Ideal: Anfrage auf komprimierte Daten möglich
+
+#### Wörterbuchkodierung
+
+- Sinnvoll für Strings
+- Mappe Strings zu unique Bits mittels Wörterbuch
+- Komprimierung: $O(log(n))$, Dekomprimierung: $O(1)$
+- Anfrage darauf teils möglich (Equality, possibly Order...)
+
+#### Bit Packing
+
+- Slacks $\coloneqq$ Ungenutzte Bits
+- Wenn z.b. für Wörterbuchkodierung nur 4 Bits gebraucht werden (weil $n \le 16$),
+  dann wird es trotzdem als `int16` gespeichert
+- Stattdessen, speichere 4 Codes in einem `int16`
+- Nachteil: Verarbeitung darauf nicht mehr trivial (Bit-Operationen notwendig)
+
+#### Lauflängenkodierung
+
+- Speichere Duplikate nur einmal und merke in separater Tabelle wie oft es vorkommt
+  - z.b. Wenn "Bayern" 3-mal vorkommt, speichere nur einmal mit Anzahl an Vorkommen (3)
+- Kombinierbar mit Wörterbuchkodierung
+
+### HyPer Copy on Write
+
+- Wenn Datenobjekt durch OLTP Anfrage geändert wird, wird neue Page mit alten Daten erstellt
+- Korrekter Zugriff über Zeitstempel
+- OLTP kann dann Page modifizieren
+
+## XML
