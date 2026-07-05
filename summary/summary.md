@@ -151,7 +151,7 @@ Domäne ist unendlich groß, $KUNDE(k)$ ist nicht unendlich groß, somit ist $\n
 - Anhand Bsp:
 - Relation `Person(X, Y, Z)` (Attribute: Name, Alter, Geschlecht)
 - Relation `Elternschaft(X, Y)` (Attribute: Elternteil, Kind)
-- Mögliches Tupel: `Person(Klemens, 32, m)`, `Elternschaft(John, Jeff)`
+- Mögliches Tupel (logischer Fakt): `Person(Klemens, 32, m)`, `Elternschaft(John, Jeff)`
 - Anfrage: `Elternschaft(John, x)` ("Kinder von John")
 
 - **Extensionale Datenbank**
@@ -165,9 +165,10 @@ Domäne ist unendlich groß, $KUNDE(k)$ ist nicht unendlich groß, somit ist $\n
 - Atom: $P(X_1, \dots, X_n)$
 - Literal: `[ not ] Atom`
 - Klausel: Disjunktion von Literalen
-- Horn-Klauseln: Klausel mit maximal ein positiven Literal
+- **Horn-Klauseln**: Klausel mit maximal ein positiven Literal
   - $\neg p_1 \cup \neg p_2 \cup \neg p_3 \cup u$
 - Datalog: Menge von Horn-Klauseln
+- **Keine** komplexen Terme (z.b. `P(f(1), 2)`)
 
 ##### Probleme bei Logischer Anfragesprache
 
@@ -176,3 +177,145 @@ Domäne ist unendlich groß, $KUNDE(k)$ ist nicht unendlich groß, somit ist $\n
 - $\Rightarrow$ Beschränkung auf **Horn-Klauseln**
 
 ##### Rekursion in Datalog
+
+- **Lineare Rekursion**
+  - **Links-rekursiv**
+
+        FollowOn(x, y) :- SequelOf(x, y)
+        FollowOn(x, y) :- FollowOn(x, z), SequelOf(z, y)
+
+  - **Rechts-rekursiv**
+
+        FollowOn(x, y) :- SequelOf(x, y)
+        FollowOn(x, y) :- SequelOf(x, z), FollowOn(z, y)
+
+- **Nicht-lineare Rekursion**
+
+        FollowOn(x, y) :- SequelOf(x, y)
+        FollowOn(x, y) :- FollowOn(x, z), FollowOn(z, y)
+
+  - Manche System können keine nicht-lineare Rekursion
+  - TODO: still not sure what these mean in practice
+
+```
+Vorfahre(X, Y) :- Elternschaft(X, Y)
+Vorfahre(X, Y) :- Elternschaft(X, Z), Vorfahre(Z, Y)
+```
+
+- **Beweistheoretischer** Ansatz für transitive Hülle:
+  1. Beginne mit leerer Menge
+  2. Wende alle Regeln an
+  3. Wenn Fixpunkt (also keine neuen Tupel), dann fertig
+  4. Sonst wiederhole von 2.
+- **Modelltheoretischer** Ansatz für transitive Hülle:
+  1. Bilde _alle_ Folgen von Tupel-Paaren (in der Theorie, natürlich eig. unendlich)
+  2. z.b.: `((R3, R1), (R1, R2)), ((R4, R2), (R1, R3)), ((R1, R2), (R2, R3))`
+  3. Für jede Folge: Macht sie Modell wahr?
+
+     Also für `R1(...) :- R2(...), ..., RN(...)` mit Variablen $x_1, \dots, x_m$:
+
+     $$= \forall x_1, \dots, x_m : R_2(\dots) \land \dots \land R_n(\dots) \Rightarrow R_1(\dots)$$
+     $$= \forall x_1, \dots, x_m : \neg R_2(\dots) \lor \dots \lor \neg R_n(\dots) \lor R_1(\dots)$$
+     Was eine Horn-Klausel ist.
+
+     Eine Instanz erfüllt die Regel, wenn alle Atome wahr sind. D.h. wenn $R_2(\dots), \dots, R_n(\dots)$ wahr sind, dann ist $R_1(\dots)$ wahr.
+
+- Beweistheoretisch und Modelltheoretisch sind equivalent im Ergebnis **wenn es sich um Horn-Klauseln handelt**.
+- Modelltheoretische Semantik beschreibt Semantik als allgemeine FOL
+- Beweistheoretische Semantik beschreibt Semantik mittels einem Algorithmus
+
+#### Monotonie Eigenschaft
+
+- monoton $\coloneqq$ Vergrößerung des Inputs macht nicht Output kleiner
+- Datalog ist monoton, weil keine Negation in Definitionen erlaubt (dann keine Horn-Klausel mehr)
+- Differenz ($-$) ist **nicht monoton**:
+  1. $S = \{1, 2\}, R = \{1\}$
+  2. $S - R = \{2\}$
+  3. Sei $R' = \{1,2\}$
+  4. Dann ist $S - R' = \{\}$, also ist **kleiner geworden** obwohl $R'$ größer ist
+
+#### Ausdrucksmächtigkeit
+
+- RA $\coloneqq$ Relationale Algebra
+- Datalog $\cap$ RA $=$ Datalog ohne Rekursion $=$ RA ohne Differenz
+
+#### Negation in Datalog
+
+```prolog
+P(X) :- R(X), ¬Q(X).
+Q(X) :- R(X), ¬P(X).
+```
+
+Nehme an die extensionale Datenbank hat nur ein Tupel in R (0).
+
+| P   | Q   | Begründung                 |
+| --- | --- | -------------------------- |
+| ∅   | ∅   | Startzustand               |
+| {0} | ∅   | `¬Q(0)` ⇒ `P(0)`           |
+| ∅   | {0} | `¬P(0)` ⇒ `Q(0)`           |
+| {0} | ∅   | `¬Q(0)` ⇒ `P(0)`           |
+| ∅   | {0} | `¬P(0)` ⇒ `Q(0)`           |
+| ... | ... | Oszillation, kein Fixpunkt |
+
+- Beweistheoretische Semantik: Algorithmus terminiert nicht
+- Modelltheoretische Semantik: Es kann mehrere Modelle geben
+- $\Rightarrow$ nicht mehr equivalent
+- $\Rightarrow \neg P$ nur erlaubt, wenn $P$ vollständig berechnet wurde
+
+##### Stratifikation
+
+- Zeichne einen Abhängigkeitsgraphen der Regeln
+  - Kante von $P$ nach $Q$ $\iff$ Regel von $P$ beinhaltet $Q$
+  - Kante is mit $\neg$ gelabelled, wenn es in der Regel negiert vorkommt
+- $\Rightarrow$ Wenn es Zyklus mit mindestens einer Negation gibt, dann ist es störend (nicht mehr eindeutig).
+- **Stratifikation**:
+  - Partitioniere Programm in $n$ Ebenen, nummeriert mit $0, \dots, n - 1$, sodass:
+    1. $R$ wird positiv in Regel für $S$ verwendet $\Rightarrow$ $R$ ist in der Ebene $k$, wobei $k \le layer(S)$
+    1. $R$ wird negativ in Regel für $S$ verwendet $\Rightarrow$ $R$ ist in der Ebene $k$, wobei $k \lt layer(S)$
+
+### Rekursion in SQL
+
+```sql
+WITH RECURSIVE Reaches(from_, to_) AS (
+    SELECT from_, to_
+    FROM Flights
+    UNION
+    SELECT R1.from_, R2.to_
+    FROM Reaches AS R1, Reaches R2
+    WHERE R1.to_ = R2.from_
+) SELECT * FROM Reaches;
+```
+
+- Rekursion ist nicht linear (gewisse System können Linearität fordern)
+- Mutual Recursion nur erlaubt, wenn monoton (selbes Problem wie bei Datalog)
+  - Mutual recursive Relation $S$ in $R$ ist monoton $\iff$ Tupel zu $S$ hinzufügen, fügt Tupel zu R hinzu oder R verändert sich nicht
+  - Sonst kann oszillieren
+
+- **Aggregation kann Monotonizität verletzen**
+
+  ```sql
+  WITH RECURSIVE P(x) AS (
+    (SELECT * FROM R)
+    UNION
+    (SELECT * FROM Q)
+  ),
+  RECURSIVE Q(x) AS (
+    SELECT SUM(x) FROM P
+  )
+  SELECT * FROM P;
+  ```
+
+  | Runde | P                        | Q         |
+  | ----: | ------------------------ | --------- |
+  |     0 | ∅                        | ∅         |
+  |     1 | {(12), (34)}             | ∅         |
+  |     2 | {(12), (34)}             | {(46)}    |
+  |     3 | {(12), (34), (46)}       | {(46)}    |
+  |     4 | {(12), (34), (46)}       | {(92)}    |
+  |     5 | {(12), (34), (46), (92)} | {(92)}    |
+  |     6 | {(12), (34), (46), (92)} | {(138)}\* |
+
+## In-Memory Systeme
+
+- Traditionell viel mit Hard-Drive gearbeitet, also dafür optimiert
+- Heute aber viel mehr Hauptspeicher, also kann stattdessen genutzt werden
