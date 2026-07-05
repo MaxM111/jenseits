@@ -317,5 +317,105 @@ WITH RECURSIVE Reaches(from_, to_) AS (
 
 ## In-Memory Systeme
 
-- Traditionell viel mit Hard-Drive gearbeitet, also dafür optimiert
+- Traditionell viel mit Hard-Drive gearbeitet
+  - Viele Architekture optimieren durch Minimierung von Disk-Zugriff
+  - Daten sind auf Disk, Puffer im Hauptspeicher
 - Heute aber viel mehr Hauptspeicher, also kann stattdessen genutzt werden
+  - Disk eher nur für Redundanz, während eigentliche Daten in Hauptspeicher bleiben
+  - Puffermanagement muss nicht mehr DBMS machen - OS kann übernehmen
+
+- Neue Zugriffslücke ist nicht Disk Access, sondern Von-Neumann Bottleneck
+
+### Cache
+
+- Prinzip der Lokalität
+  - Hot data passt meist vollständig in Cache
+  - 90% der Zeit nur 10% des Code ausgeführt
+  - **Räumliche Lokalität**
+    - z.B. Scan von Spalte
+  - **Zeitliche Lokalität**
+    - z.B. Selektionsprädikate
+- **Cache Hit**
+  - Daten im Cache $\rightarrow$ Kein Hauptspeicher-Zugriff
+- **Cache Miss**
+  - Daten nicht im Cache
+    -\*\* $\rightarrow$ Hauptspeicher-Zugriff
+    - Lesen einer **Cache-line** (16-128 Byte) und alte damit verdrängen
+    - CPU **stalled** bis Daten verfügbar
+
+### DBMS Performanzprobleme
+
+- Schlechte Code-Lokalität wegen polymorphen Funktionen
+- Volcano-Typ Iterator-Verarbeitungsmodell (Pipelining)
+  - Tupel-at-a-time
+  - Tupel werden einzeln durch Anfrageplan geschickt
+  - Oft parallelisiert $\Rightarrow$ Mehr instruction-cache-misses und data-cache-misses (weil größerer Programmzustand)
+- Schlechte Daten-Lokalität
+  - Selten verwendete Daten sind kalt
+  - Index-Navigation mit Bäumen ist nicht cache-friendly
+
+### Speicherlayout
+
+- Row-Store
+  - Pages speichern Rows hintereinander
+  - Gut: Write/Tupelrekonstruktion
+  - Schlecht:
+- Column-Store
+  - Pages speichern Columns hintereinander
+  - Gut: Lesen von einzelnen Attributen (z.b. Aggregation)
+  - Bessere Datentyp-spezifische Kompression
+
+- Bsp.: Selektion von einem Attribut und Aggregation (`COUNT`) von ungeordneter Tabelle
+  - Ausführung: Full Table Scan
+  - Row-Store: Viele data-cache-misses, weil Rest des Tupels gecached wird,
+    aber nicht das Attribut vom nächsten Row
+  - Column-Store: Data-cache-friendly, weil alle zu
+    überprüfende Werte nebeneinander sind
+
+- Bsp.: Tupelrekonstruktion (`SELECT * ...`)
+  - Column-Store würde pro Attribut joinen müssen
+
+- Bsp.: `INSERT`/`UPDATE`
+  - Column-Store: Auf mehrere Seiten verteilt (also viele TLB-misses)
+
+- Man muss also nach **Workload** entscheiden:
+
+#### Workloads
+
+##### Transaktionaler Workload (OLTP)
+
+- Typisch: Wenige Tupel werden vollständig geholt
+- Mischung von Read/Write
+- Optimierung: Throughput
+- Wenn wenig Write, kann Column-Store sinnvoll sein
+
+##### Analytischer Workload
+
+- Typisch: Für wenige Attribute holt man viele Tupel
+- Große Datenmenge, aber generell nur gelesen
+
+### Verarbeitungsmodell
+
+- Definiert:
+  - wie Operatorbaum abgearbeitet wird
+  - wie Zwischenergebnisse weitgegeben werden
+
+#### Tuple-At-A-Time Volcano Model
+
+- Tupel werden durch Operatoren gepipelined
+- Ziel ist Minimierung von Zwischenergebnis (um in RAM zu passen)
+- Einfach zu parallelisieren
+- Operator bekommt mit Aufruf von `next()` nächstes Tupel (Iterator-style)
+- Probleme:
+  - Function-Call-Overhead weil Operatoren sich gegenseitig aufrufen
+  - Instruktion/Data-cache-misses bei Parallelisierung
+
+- Profiling zeigt nur 10% der Zeit wird für Berechnung genutzt:
+  - CPU wartet viel
+  - Einzelner Zugriff macht Compiler-Optimierungen schwierig
+
+#### Operator-At-A-Time Bulk Processing
+
+- Ausführung von gesamten Input auf Operator
+- Operator ist auf **Spalten** definiert (nicht Tupel oder Relation)
+  - Selektion: s
