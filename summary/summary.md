@@ -474,6 +474,7 @@ WITH RECURSIVE Reaches(from_, to_) AS (
   - Lossless
   - Lightweight
   - Ideal: Anfrage auf komprimierte Daten möglich
+- Folgende Beispiele eher für OLAP gedacht
 
 #### Wörterbuchkodierung
 
@@ -496,10 +497,89 @@ WITH RECURSIVE Reaches(from_, to_) AS (
   - z.b. Wenn "Bayern" 3-mal vorkommt, speichere nur einmal mit Anzahl an Vorkommen (3)
 - Kombinierbar mit Wörterbuchkodierung
 
-### HyPer Copy on Write
+### HyPer
 
-- Wenn Datenobjekt durch OLTP Anfrage geändert wird, wird neue Page mit alten Daten erstellt
-- Korrekter Zugriff über Zeitstempel
-- OLTP kann dann Page modifizieren
+- Transaktionen sind sequentiell (RAM ist eh schnell)
+- **Copy on Write**
+  - Wenn Datenobjekt durch OLTP Anfrage geändert wird, wird neue Page mit alten Daten erstellt
+  - Korrekter Zugriff über Zeitstempel
+  - OLTP kann dann Page modifizieren
 
-## XML
+## Datenmodell
+
+- Beschreibung der zulässigen Zustände (Schema)
+- Beschreibung der zulässigen Zustandsübergänge (Operatoren)
+
+- Bsp.: Relationenmodell
+  - Endliche Menge von Attributen $U$
+  - Endliche Domäne $D_{\tau}$
+  - Funktion $dom: U \mapsto D$
+  - Tupel, Relation, $\dots$
+  - Übergänge formalisiert in Algebra
+
+### Typen
+
+- Typ is Menge von Objekten gleicher mathematischer Struktur (Schema einer Relation, OOP Klasse)
+- Instanz ist Element der Domäne (Relation, OOP Objekt)
+- Domäne eines zusammengesetzten Typs ist das Produkt der Domänen seiner Attribute
+
+#### **Polymorphes Typsystem**
+
+- **Atomare Typen**
+  - `int`, `bool`, $\dots$
+- **Typkonstruktoren** (Neue Typen aus bestehenden erzeugen) (**kein Typ, nur Konstruktor**)
+  - $list(t_1, \dots, t_n)$, $record(t_1, \dots, t_n)$
+  - Relation is Menge von Tupel ($relation(t_1, \dots, t_n)$)
+  - Tupel ist Record von Attributen ($tuple(a_1, \dots, a_m)$)
+- **Polymorphe Konsistenzbedingungen**
+  - Primärschlüssel/Fremdschlüssel
+
+### Operatoren
+
+- Mathematische Funktionen anwendbar auf Instanzen von bestimmten Typen
+  - z.b: $+$ ist anwendbar auf Zahlen, $and$ ist anwendbar auf `bool`, $\dots$
+
+## XML Dokument
+
+- Dokument hat Struktur (Baum) und Daten (Text) zusammen
+  - Relation trennt Struktur (Schema) von Daten (Pages mit Daten)
+
+- **Wohlgeformt** $\coloneqq$ XML Syntax ist korrekt
+- **Gültig** $\coloneqq$ Korrekt gemäß DTD (Vorraussetzung, dass es wohlgeformt ist)
+
+- Kein festes Schema bei XML (beliebige tags und Struktur) $\rightarrow$ **semistrukturiert**
+  - Daher gibt es DTD (weil XML semistrukturiert ist)
+
+### XML als Datenmodell
+
+- Frei wählbar, ob Attribut als XML-Element oder XML-Attribut behandelt wird
+
+- Man könnte XML wie relationales Modell strukturieren:
+  - Am Anfang Schema (`<attributes>` mit Attributnamen)
+  - Dann alle Tupel (`<tupel>` mit `<attributwert>`)
+
+### Document-type-definition (DTD)
+
+- Kontextfreie Grammatik (Somit rekursive Regeln möglich)
+
+- Atomare Typen: `#PCDATA`, `#CDATA`
+- Typ-Konstruktoren:
+  - `type*`: $n$-mal ($n \ge 0$)
+  - `type+`: $n$-mal ($n > 1$)
+  - `type?`: $n$-mal ($n \le 1$)
+  - `(type, ..., type)`: "Record"
+  - `(type | type)`: "Oder"
+- Mit `ID` und `IDREF(S)` können OIDs und Referenzen beschrieben werden
+- **Primärstruktur**
+  - Alle Elemente und alle Attribute vom Typ `CDATA`
+- **Sekundärstruktur**
+  - Attribute vom Type `ID`, `IDREF(S)`
+- Nachteil:
+  - Keine Typisierung (von Referenzen)
+  - keine Konsistenzbedingungen (z.b. `father` attribute kann auf Frauen zeigen)
+
+## Deklarativer Zugriff auf semistrukturierte Daten
+
+## Matrix Multiplikation
+
+- schau Video
