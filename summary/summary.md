@@ -604,6 +604,167 @@ WITH RECURSIVE Reaches(from_, to_) AS (
 - z.B.: `/descendant::figure[1]` - selektiere erstes Bild im Dokument
 - z.B.: `//author/parent::book` - selektiere Autoren, dessen Parent ein `book` ist
 
+## Relationale Speicherung von XML & XPath-Accelerator
+
+### Edge Modell
+
+- Speichere Nodes als Tabelle (Elemente von XML)
+- Speichere Edges als Tabelle (Kanten von Baumstruktur)
+- Ineffizient: Rekonstruktion benötigt viele Joins
+
+### Räumliche Anfragen
+
+- Anfragen wie "Welche Bars sind in der Nähe"
+- Naiv: Berechne Distanz für jede Bar
+- **R-Baum (Rectangle-Baum)**
+  - Gruppiert (z.b.) 2-D Punkte nach ihrer Nähe zueinander
+  - Blätter sind MBR (Minimum Bounded Rectangle, kleinstes Rechteck um Punkte einzuschließen)
+  - Innerer Knoten (und auch Wurzel) hat als MBR die Vereinigung der MBR seiner
+    Kinder
+  - DBMS-Implementierung: GiST (Generalised Search Tree) (Generalised, weil nicht nur Rechtecke, z.b. auch Kreise)
+
+### XPath Accelerator
+
+- Ancestor, Descendant, preceding, following partitionieren Knoten (eines XML-Baums)
+- Methodik:
+  1. Annotiere alle Knoten mit **Preorder** und **Postorder** Nummer
+  2. Verwende **Preorder als x-Koordinate**, **Postorder als y-Koordinate**
+     und zeichne Funktions-Graph
+  3. Für Kontextknoten $v$, partitioniere den Funktions-Graph in Quadranten,
+     wo $v$ Origin ist.
+  4. $\Rightarrow$ Für Knoten $u$ gilt dann:
+     - $u$ ist Ancestor $\iff$ links oben
+     - $u$ ist Descendantk $\iff$ rechts unten
+     - $u$ ist Preceding $\iff$ links unten
+     - $u$ ist Following $\iff$ rechts oben
+- Schneller als Edge-Modell, da nur range-checks
+
+#### Optimierung
+
+##### Verkleinerung von Fenster
+
+- Man muss nicht den ganzen Quadranten betrachten
+  (von 0 bis Wert oder von Wert bis unendlich),
+  sondern nur einen Teil davon
+- Es gilt:
+  $$pre(v_{child}) \le post(v) + height$$
+  $$post(v_{leftest\_child}) \ge pre(v) - height$$
+- Z.b. Descendants sind im rechten unteren Quadranten (post < post(v) && pre > pre(v))
+  - $\Rightarrow pre \in (pre(v), \infty), post \in [0, post(v))$
+  - $\Rightarrow pre \in (pre(v), post(v) + height), post \in [pre(v) - height, post(v))$
+- TODO: überprüfe für andere Achsen
+
+##### Zugriff mit nur einer Achse
+
+- Nur für `descendants()`
+- Annotiere diesmal anders:
+  - Nur einen gemeinsamen counter
+  - Annotiere preorder bei erstem Besuch
+  - Annotiere postorder bei letztem Besuch
+- Dann gilt: Descendant $\iff$ $pre > pre(v) \land pre < post(v)$
+
+### Prüfungsfragen
+
+- Wieso ist es vorteilhaft, die Struktur
+  eines Dokumentbestands für die Speicherung/
+  für die Evaluierung von Anfragen zu kennen?
+  - Angelegte Relationen können Annahmen treffen
+    - z.b. Wenn XML strenges Schema hat, muss man kein Edge-Modell verwenden - einfach normale Relationen
+- Warum eignet sich XPath Accelerator für Realisierung von RDBMS Technologie?
+  - Kein Edge Modell (langsam wegen vielen Joins)
+  - Mittels Annotationen können Achsen schnell mittels range-checks gesucht werden
+- Einen Location Step nach SQL wiedergeben können
+- Eine Optimierung des XPath Accelerators erklären
+
+## Zentralität in Graphen
+
+- "Wie wichtig ist dieser Knoten?"
+- Zentralität ist Entscheidungsgrundlage für
+  - Werbetarget
+  - Selbstverwaltung (Moderatorrechte vergeben)
+
+- Arten:
+  - Lokale Ansätze
+    - InDegree
+  - Eigenvektor-basiert
+    - PageRank, Authority, Positional Weakness Function
+  - Distanz-basierte
+    - Proximity Prestige, Integrity
+
+### Lokal-basiert (InDegree)
+
+- einfach zu berechnen
+- (un)gewichtet
+- Nachteile:
+  - "Ungewichtet"
+    - Fake-likes
+    - Wissenschaft: Ist es egal wer dich zitiert?
+
+### Eigenvektor-basiert (PageRank)
+
+- PageRank (PR) nur gerichtete Graphen
+- Intuitiv:
+  - Knoten ist wichtig, wenn andere Knoten ihn exklusiv referenzieren
+  - $indegree(i) = 0 \implies PR_i$ is minimal
+  - Knoten, die von wichtigen Knoten referenziert werden, haben höhere Wichigkeit (wenn exklusiv, dann sogar schneller)
+  - Hoher $indegree(v)$ impliziert hohe Wichtigkeit
+- Iterativ berechnet mit Dämpfungsfaktor $d$:
+  1. Initialisiere PR mit $1/|V|$
+  2. Pro Runde wird $PR_i$ geupdated (Dämpfungsfaktor $d$ (oft 0.85)):
+     - $\frac{(1 - d)}{|V|}$ stellt sicher das PageRank nicht 0 wird
+     - $+ d \cdot \sum_{\forall j \in \{(j, i)\}}\frac{PR_j}{outdegree(j)}$
+       - Summe der PageRanks aller Knoten, die $i$ referenzieren
+       - Je mehr $j$ andere Knoten referenziert, desto weniger Gewicht hat sein PageRank
+       - "Gedämpft" mit $d$
+  3. Ende nach Konvergenz
+  - Effekt: PR wird gleichmäßig an referenzierte Knoten weitergegeben
+
+### Distanz-basiert (Proximity Prestige)
+
+- Influence Domain $I_i$: Knoten, die $i$ erreichen können (max: $|V| - 1$)
+- $d(j, i) \coloneqq$ Distanz des kürzesten Pfades von $j$ nach $i$
+  $$P_p(i) = \frac{\frac{|I_i|}{|V| - 1}}{\frac{\sum_{j \in I_i}d(j, i)}{|I_i|}}$$
+  - $\frac{|I_i|}{|V| - 1}$: Normalisiere $I_i$
+  - $\frac{\sum_{j \in I_i}d(j, i)}{|I_i|}$: Durchschnittliche Distanz
+
+- Intuitiv:
+  - $P_p(i) \in (0, 1]$
+  - nur berechenbar wenn $|I_i| > 0$
+  - Maximaler Wert:
+    - $|I_i| = |V| - 1$ (Alle Knoten erreichen)
+    - $\forall j \in V : d(j, i) = 1$ (Direkt erreichbar)
+  - Minimaler Wert:
+    - Kleine $|I_i| (kaum erreichbar)
+    - Kürzeste Pfade sind sehr lang
+  - Je näher (je kleiner $d(j, i)$) und je mehr Knoten ($I_i$) $i$ erreichen,
+    desto wichtiger ist $i$
+
+#### Betweeness Centrality
+
+- Für alle Knotenpaare $j$ und $k$, wie viele von
+  ihren Pfaden "durchqueren" Knoten $i$?
+- Sei $P_{jk}$ die Anzahl kürzester Pfade zwischen $j$ und $k$
+  $$C_B(i) = \sum_{j < k}\frac{P_{jk}(i)}{P_{jk}}$$
+- ($j < k$, damit Knotenpaare nicht doppelt gezählt werden)
+- Unterschied zu Proximity Prestige: Erreichbarkeit ist nicht wichtig,
+  sondern wie sehr man den Knoten besuchen muss, um andere Knoten zu erreichen
+  - z.b. vergleiche Stern ($i$ ist Mitte) und Clique
+
+### Zentralitätsmaße
+
+| Zentralitätsmaß     | Gewichtet (Mehrere Kanten, ± Gewichte) | Gewichtet (Einzelne Kanten, + Gewichte) | Ungewichtet (Einzelne Kanten) |
+| ------------------- | :------------------------------------: | :-------------------------------------: | :---------------------------: |
+| Lokal               |                   ✓                    |                    ✓                    |               ✓               |
+| Eigenvektor-basiert |                   –                    |                    ✓                    |               ✓               |
+| Distanz-basiert     |                   –                    |                    –                    |               ✓               |
+
+- (Mehrere Kanten bedeutet mehrere Kanten zwischen zwei Knoten)
+- Distanzbasierte Ansätze sind nicht auf gewichtete Graphen definiert
+  (z.b. ist hohes Gewicht "näher" oder "entfernter"?)
+- PageRank Ansätze nicht auf Graphen mit "mehreren Kanten" definiert
+  (z.b. bei Weitergabe von PR, sollte jede Kante zwischen $i$ und $j$ beachtet werden?)
+- Transformationen von Graphen möglich, aber Information geht verloren
+
 ## Matrix Multiplikation
 
 - schau Video
