@@ -765,6 +765,218 @@ WITH RECURSIVE Reaches(from_, to_) AS (
   (z.b. bei Weitergabe von PR, sollte jede Kante zwischen $i$ und $j$ beachtet werden?)
 - Transformationen von Graphen möglich, aber Information geht verloren
 
-## Matrix Multiplikation
+## Mustererkennung mit Motifs
 
-- schau Video
+- Anforderung: Abgeschlossenheit (Graph in, Graph out)
+- Schwierigkeit: Strukturen zu nehmen und zu erkennen sehr schwierig in "normalen" DBMS
+  - Schlecht erkennbar was Bedürfnis ist
+  - Viele Joins
+
+### Graph Motif
+
+- Formale Sprache für Graph Muster
+  - Knoten/Kanten sind Terminale
+  - Graphen sind Non-Terminale
+
+#### Simple Graph Motif
+
+```
+graph Triangle {
+  node v1, v2, v3;
+  edge e1(v1, v2);
+  edge e2(v2, v3);
+  edge e3(v3, v1);
+}
+```
+
+#### Composed Graph Motif
+
+- Externes Interface: Elemente, die von außen sichtbar/referenzierbar sind
+
+##### Concatenation
+
+```
+graph G2 {
+  graph Triangle as X;
+  graph Triangle as Y;
+  edge e4(X.v1, Y.v1);
+  edge e5(X.v3, Y.v2);
+}
+```
+
+##### Unification
+
+- Verschmelzen von Knoten (somit auch von dazugehörigen Kanten))
+
+```
+graph G2 {
+  graph Triangle as X;
+  graph Triangle as Y;
+  unify X.v1, Y.v1;
+  unify X.v3, Y.v2;
+}
+```
+
+##### Disjunction
+
+```
+graph G4 {
+  node v1, v2;
+  edge e1(v1, v2);
+  {
+    node v3;
+    edge e2(v1, v3);
+    edge e3(v2, v3);
+  } | {
+    node v3, v4;
+    edge e2(v1, v3);
+    edge e3(v2, v4);
+    edge e4(v3, v4);
+  };
+}
+```
+
+- Externes interface ist `node v1, v2` und `edge e1(v1, v2)`
+
+##### Recursion
+
+```
+graph Path {
+  {
+    graph Path;
+    node fn;
+    edge e1(fn, Path.fn);
+    export Path.ln as ln
+  } | {
+    node fn, ln;
+    edge e1(fn, ln);
+  };
+}
+
+graph Cycle {
+  graph Path;
+  edge e1(Path.fn, Path.ln);
+}
+```
+
+- Externes interface ist `fn`, `ln` (ig not `e1`, because it's not used)
+
+```
+graph G5 {
+  {
+    graph G5;
+    graph Triangle as T;
+    export G5.v0 as v0;
+    edge e1(v0, T.v1)
+  } | {
+    node v0;
+  }
+}
+```
+
+- Ein Stern, an die Dreiecke verbunden werden
+- Externes interface ist `v0` (weil man braucht nur den mittleren Knoten um Stern "weiterzubauen")
+
+```
+graph Bintree {
+  {
+    node root;
+    graph Bintree as Left;
+    graph Bintree as Right;
+    edge e1(root, Left.root)
+    edge e2(root, Right.root)
+  } | {
+    node root;
+  }
+}
+```
+
+- Externes interface ist `root`
+
+- **Allgemein aber limitiert**:
+  - z.b. Clique: Externes Interface müsste sich ändern je nach Größe
+
+### Graph Query Language
+
+- Erweiterungen, um die Motifs zu einer Query Language zu erweitern:
+
+#### Labels
+
+```
+graph G <inproceedings> {
+  node v1 <title="Title1", year=2006>;
+  node v2 <author name="Schaeler">;
+}
+```
+
+#### Graph Pattern
+
+```
+graph P {
+  node v1;
+  node v2;
+} WHERE v1.name = "A" AND v2.year > 2000;
+```
+
+- Wie man sehen kann, muss das Pattern `v1` nicht das `v1` von `G` sein
+  - Passende Bindung erst bei pattern match
+- Formell: $P(M, F)$
+  - $M \coloneqq$ Motif
+  - $F \coloneqq$ Filter (Prädikate)
+- Graph `G` matched $P(M, F)$ $\iff$ es gibt injektive Funktion $\phi: V(M) \rightarrow V(G)$ sodass:
+  1. Für jede Kante $(u, v)$ im Motif $M$, gibt es dazugehörige Kante $(\phi(u), \phi(v))$ in $G$
+  2. Alle Prädikate vom Filter $F$ sind erfüllt
+  - (injektiv, weil Surjektion nicht notwendig ist (nur Teil des Graphens braucht Mappings für den Match))
+
+#### Graph Algebra
+
+- Menge von Graphen (Graphdatenbank)
+- **Unterschied zu Relationaler Algebra**:
+  - Selektion miteels Pattern (und somit Motifs)
+  - Kompositionsoperator
+
+##### Selektion
+
+- $\sigma_P(C)$
+  - $C$: Menge von Graphen
+  - $P$: Graph Pattern $P(M, F)$
+
+##### Kartesisches Produkt
+
+- erzeugt neue Graphen, die nicht verbunden sind:
+  $$C \times D = \{graph \{ graph G_1, G_2; \} \mid G_1 \in C, G_2 \in D\}$$
+
+##### Komposition
+
+- **Graph Template** besteht aus
+  - _Parameter_, als Graph Patterns
+  - _Body_, der Ergebnis Graph spezifiziert
+
+- Bsp.:
+  - Template Parameter: Pattern $P$:
+
+    ```
+    graph P {
+      node v1;
+      node v2;
+    } where v1.author = "A" AND v2.year > 2000
+    ```
+
+  - Template Body:
+
+    ```
+    T_P = graph {
+      node v1 <label=P.v1.name>;
+      node v2 <label=P.v2.title>;
+      edge e1(v1, v2);
+    }
+    ```
+
+##### Ausdrucksmächtigkeit
+
+- Vollständigkeit:
+  - Selektion
+  - Kartesisches Produkt
+  - Komposition
+  - Vereinigung und Differenz (Graph Pattern kann das)
+- Graph Algebra ohne Rekursion = Relationale Algebra
