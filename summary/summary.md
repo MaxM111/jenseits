@@ -859,7 +859,7 @@ graph Cycle {
 }
 ```
 
-- Externes interface ist `fn`, `ln` (ig not `e1`, because it's not used)
+- Externes interface ist `fn`, `ln` (technically also `e1`, but unused)
 
 ```
 graph G5 {
